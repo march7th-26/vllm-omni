@@ -122,7 +122,7 @@ def native_mix(q, k, v, mask, scale):
     return out.transpose(1, 2).contiguous()
 
 
-def run(q, k, v, plan, sparsity, scale, return_mask=False, precision="bf16"):
+def run(q, k, v, plan, sparsity, scale, return_mask=False, precision="bf16", ref_selection=None, ref_keep_ratio=1.0):
     if precision not in ("bf16", "mix"):
         raise ValueError("unsupported rectangular precision")
 
@@ -153,6 +153,10 @@ def run(q, k, v, plan, sparsity, scale, return_mask=False, precision="bf16"):
         mask = probs >= threshold
         if plan.protected_keys.numel():
             mask[:, :, :, plan.protected_keys] = True
+        if ref_keep_ratio < 1.0:
+            from mindiesd.layers.flash_attn.ref_sparse_mask import apply_ref_mask
+
+            mask = apply_ref_mask(mask, scores, ref_selection, ref_keep_ratio)
         ys = native(qs, kr, vr, mask.to(torch.int8), scale)
         out.index_copy_(1, plan.sparse_indices, ys)
     if plan.dense_rows:

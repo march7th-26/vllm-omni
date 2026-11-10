@@ -1,24 +1,25 @@
 # 验证
 
-## 本地检查
+## CPU 检查
 
-- CPU 测试：19 项通过，覆盖八步参考 KV 复用、请求清理、序列并行补齐和配置校验。
-- 使用真实 CPU 张量；仅替换导入时的日志和未调用的平台对象，不模拟 NPU 运算。
-- 启动参数和 multipart 请求字段通过本地命令替身核对，未实际启动服务或发送推理请求。
-- Markdownlint、命令语法和本地链接检查通过。
+34 项测试通过，覆盖参考 KV 八步复用与清理、序列并行补齐、RBS 参数边界、
+每张参考图的缓存位置映射、完整 query 的参数传递和矩形 query 块编号映射。
+RBS 测试从生产源文件加载配置和几何定义；未加载 vLLM 或原生 NPU attention。
 
-CPU 测试使用 Python 3.12.10、PyTorch 2.6.0+cpu：
+依赖 Python、pytest 和 CPU PyTorch。本地检查使用 Python 3.12.10、PyTorch 2.6.0+cpu：
 
 ```bash
-python -m pytest --noconftest -o addopts='' tests/diffusion/models/minimax_h3/test_ref_reuse_snapshot.py -q
+python -m pytest --noconftest -o addopts='' tests/diffusion/models/minimax_h3/test_reference_block_selection.py tests/diffusion/models/minimax_h3/test_ref_reuse_snapshot.py -q
 ```
 
-运行该隔离测试时，未安装 pytest-asyncio 会产生一项配置告警。
-完整仓库 pre-commit 套件未完成；以上为单独执行的检查。
+在已安装完整仓库测试依赖的环境中，按现有 L1 标记执行：
+
+```bash
+python -m pytest tests/diffusion/models/minimax_h3/test_reference_block_selection.py tests/diffusion/models/minimax_h3/test_ref_reuse_snapshot.py -m 'core_model and cpu' --run-level core_model -q
+```
 
 ## NPU 证据范围
 
-NPU 通信、原生算子和完整模型结果来自既有性能测试，见 [实验结果](RESULTS.md)。
-代码整理后未重新运行 NPU，也未验证新构建的 MindIE-SD 二进制。
-依赖接口一致不能证明数值和性能一致，画质仍待人工评价。
-未采集 msProf。
+[结果](RESULTS.md) 中的 NPU 数字来自既有完整模型测试，分别列出四卡 RBS 开关对照与
+八卡 H3-RefReuse 对照。当前分支整理后未重新执行 NPU 端到端测试；CPU 检查不能代替
+原生算子、完整模型或画质验收。新构建的 MindIE-SD wheel 也未完成本分支的 NPU 验证。

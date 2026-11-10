@@ -49,6 +49,15 @@ sensitive blocks.
 
 ## Requirements and compatibility
 
+MiniMax-H3 Ref2VA can combine reference-KV reuse with reference block selection
+through `block_sparse.ref_keep_ratio`. Its range is `(0, 1]`, with default `1`
+disabling RBS; smaller values require positive `sparsity`. Selection is per
+reference image, head and target query block. Mixed blocks and protected query
+connections remain intact; reference videos and the stored reference KV are
+not reduced by this ratio. The matching MindIE-SD RBS build is required.
+See the [H3-RefReuse-RBS recipe](../../../../recipes/h3_ref_reuse/README.md)
+for installation and the existing `vllm serve` options.
+
 RainFusion requires Ascend NPU and `mindiesd`. Selecting it on another
 platform raises. It is incompatible with ring sequence parallelism because
 the kernel needs the complete key sequence for ranking; use Ulysses sequence

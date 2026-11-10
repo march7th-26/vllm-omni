@@ -170,8 +170,8 @@ def _reference_kv_video_layout(
 ) -> VideoTokenLayout | None:
     """Keep complete reference-video spans in the cached K/V prefix.
 
-    Q has only target rows. Images, partial video spans, and other context
-    retain their existing dense protection because they have no K/V video span.
+    Q has only target rows. Track images separately so RBS can select their
+    complete blocks while mixed context and partial video spans remain protected.
     """
     if compact is None:
         return None
@@ -190,7 +190,14 @@ def _reference_kv_video_layout(
         VideoTokenSpan(start=span.start + reference_rows, latent_grid=span.latent_grid, role=span.role)
         for span in compact.video_spans
     )
+    image_positions = []
+    for start, stop in original.reference_image_spans:
+        owned = tuple(i for i, position in enumerate(positions) if start <= position < stop)
+        if len(owned) != stop - start:
+            raise ValueError("reference image not fully represented in cached prefix")
+        image_positions.append(owned)
     return VideoTokenLayout(
+        reference_image_positions=tuple(image_positions),
         used_len=compact.used_len + reference_rows,
         video_spans=tuple(sorted(spans, key=lambda span: span.start)),
     )

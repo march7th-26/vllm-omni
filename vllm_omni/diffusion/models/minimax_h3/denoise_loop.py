@@ -152,6 +152,7 @@ class MiniMaxH3DenoiseBranch:
             self.static_kwargs["video_token_layout"] = VideoTokenLayout(
                 used_len=int(cu[1]),
                 video_spans=spans,
+                reference_image_spans=tuple(packed.get("reference_image_spans", ())),
             )
             # FastH3-specific prefix geometry belongs to MiniMax-H3's packed
             # attention contract, not the shared VideoTokenLayout interface.

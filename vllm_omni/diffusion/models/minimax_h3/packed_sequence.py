@@ -532,6 +532,9 @@ def minimax_h3_packed_sequence_ref2va_blocks(
     # This is deliberately tensor-free metadata. It is constructed once by
     # the denoise branch and consumed by every attention layer without a
     # device-to-host synchronization.
+    reference_image_spans = tuple(
+        (int(item["visual_sl"].start), int(item["visual_sl"].stop)) for item in block_slices if item["kind"] == "image"
+    )
     video_spans: list[dict[str, object]] = []
     for item in block_slices:
         if item["kind"] in ("video", "video_audio", "latent_guide"):
@@ -723,6 +726,7 @@ def minimax_h3_packed_sequence_ref2va_blocks(
         "latent_grid": torch.tensor([latent_t, ph, pw], dtype=torch.int64),
         "video_row_start": torch.tensor(video_sl.start, dtype=torch.int64),
         "video_spans": tuple(video_spans),
+        "reference_image_spans": reference_image_spans,
     }
 
 

@@ -71,6 +71,14 @@ A backend reads only the fields it owns and rejects incompatible values. New
 options should be added to a shared typed spec only when more than one backend
 shares their semantics; otherwise add a dedicated typed block.
 
+The RainFusion `block_sparse.ref_keep_ratio` option defaults to `1` (RBS off).
+Values in `(0, 1)` require positive sparsity and the matching MindIE-SD RBS
+helpers. MiniMax-H3 supplies per-image ranges for full queries and exact image
+positions after reference-KV packing. The backend forwards this ownership to
+MindIE-SD for full queries and remaps target query block IDs for rectangular
+reuse. Missing RBS helpers raise; the ratio is never inferred from an environment
+variable. The option changes image-block connectivity, not the KV storage size.
+
 ## Model integration contract
 
 Each diffusion attention call declares a stable role and, when appropriate, a

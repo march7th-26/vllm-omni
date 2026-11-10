@@ -1,6 +1,6 @@
-## H3-RefReuse：MiniMax-H3 参考复用推理
+## H3-RefReuse-RBS：MiniMax-H3 参考复用与参考块筛选
 
-在 Ascend 950PR 上使用八步 LoRA、参考 KV 复用和矩形 mix attention 运行 MiniMax-H3 Ref2VA。
+在 Ascend A5 上组合八步 LoRA、参考 KV 复用、矩形 mix attention 和可调比例的参考块筛选。
 环境准备、服务启动和请求示例见 **[快速启动](recipes/h3_ref_reuse/README.md)**。
 
 ---

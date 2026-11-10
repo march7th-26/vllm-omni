@@ -107,6 +107,13 @@ class RainFusionConfig:
     end_step: int = 0
     precision: str = "bf16"
     skip_layers: frozenset[int] = frozenset()
+    ref_keep_ratio: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.ref_keep_ratio <= 1.0:
+            raise ValueError("RainFusion ref_keep_ratio must be in (0, 1].")
+        if self.ref_keep_ratio < 1.0 and self.sparsity <= 0.0:
+            raise ValueError("reference block selection requires positive block sparsity.")
 
     @classmethod
     def from_backend_kwargs(cls, backend_kwargs: dict | None) -> RainFusionConfig:
@@ -117,6 +124,7 @@ class RainFusionConfig:
             end_step=int(bk.get("end_step", 0)),
             precision=str(bk.get("precision", "bf16")),
             skip_layers=frozenset(bk.get("skip_layers") or ()),
+            ref_keep_ratio=float(bk.get("ref_keep_ratio", 1.0)),
         )
 
     @property
@@ -322,6 +330,23 @@ class RainFusionAttentionImpl(AttentionImpl):
                         for span in cast(list[dict[str, object]], plan.video_spans)
                     )
                     rect_plan = get_plan(used_kv, reference_rows, spans, str(query.device))
+                    selection = None
+                    if self.rainfusion.ref_keep_ratio < 1.0:
+                        from vllm_omni.diffusion.attention.ops.reference_block_selection import rectangular_plan
+
+                        selection = rectangular_plan(
+                            used_kv,
+                            reference_rows,
+                            spans,
+                            str(query.device),
+                            kv_layout.reference_image_spans,
+                            kv_layout.reference_image_positions,
+                            tuple(
+                                (span.start, span.start + span.length)
+                                for span in kv_layout.video_spans
+                                if span.role == "target"
+                            ),
+                        )
                     result = run(
                         query[:, :used_q],
                         key[:, :used_kv],
@@ -330,6 +355,8 @@ class RainFusionAttentionImpl(AttentionImpl):
                         self.rainfusion.sparsity,
                         self.softmax_scale,
                         precision=self.rainfusion.precision,
+                        ref_selection=selection,
+                        ref_keep_ratio=self.rainfusion.ref_keep_ratio,
                     )
                     _research_routes["sparse_success"] += 1
                     _research_routes["rectangular_sparse_success"] += 1
@@ -635,6 +662,18 @@ class RainFusionAttentionImpl(AttentionImpl):
             dense_context_seqlen,
             int(used_len),
         )
+        if self.rainfusion.ref_keep_ratio < 1.0:
+            # The versioned MindIE-SD bridge consumes these span fields.
+            # Require its helper so other builds cannot silently ignore RBS.
+            from vllm_omni.diffusion.attention.ops.reference_block_selection import require_rbs
+
+            require_rbs()
+            spans[0]["_ref_keep_ratio"] = self.rainfusion.ref_keep_ratio
+            spans[0]["_ref_images"] = list(layout.reference_image_spans)
+            spans[0]["_ref_image_positions"] = list(layout.reference_image_positions)
+            spans[0]["_ref_targets"] = [
+                (span.start, span.start + span.length) for span in layout.video_spans if span.role == "target"
+            ]
         return RainFusionPlan(used_len=int(used_len), video_spans=spans)
 
     def _forward_sparse_npu(

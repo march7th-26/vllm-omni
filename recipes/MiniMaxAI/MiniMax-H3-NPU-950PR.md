@@ -175,6 +175,13 @@ HBM; keep pure Ulysses (`--ring 1`) and DiT TP=1. For the eight-step LoRA,
 MXFP8 and rectangular mix attention configuration on eight Ascend 950PR
 devices, see [H3-RefReuse](../h3_ref_reuse/README.md).
 
+To combine reference reuse with reference block selection (RBS), add
+`"ref_keep_ratio":0.5` to the existing RainFusion `block_sparse` configuration.
+Values in `(0, 1]` control the retained fraction per reference image; `1` disables
+RBS. Install the matching [MindIE-SD RBS version](../h3_ref_reuse/ENVIRONMENT.md#mindie-sd-rbs).
+The [quick start](../h3_ref_reuse/README.md) includes the complete `vllm serve`
+configuration and comparison settings.
+
 ## Request examples
 
 Identical to the eight-card recipe; see
