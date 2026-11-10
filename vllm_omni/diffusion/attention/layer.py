@@ -506,10 +506,12 @@ class Attention(nn.Module):
             reason = self._cross_backend_limitation(attn_metadata)
             if reason is not None:
                 blocked = self._cross_fallback_blocker(attn_metadata)
-                result = self.sdpa_fallback.resolve_execution_path(resolved_context, query, key, value, attn_metadata)
+                result = cast(SDPAImpl, self.sdpa_fallback).resolve_execution_path(
+                    resolved_context, query, key, value, attn_metadata
+                )
                 return replace(
                     result,
-                    backend=self.attn_backend.get_name() if blocked else "SDPA",
+                    backend=cast(type[AttentionBackend], self.attn_backend).get_name() if blocked else "SDPA",
                     path="cross_unsupported" if blocked else "cross_sdpa_fallback",
                     support=CapabilityResult.unsupported(blocked) if blocked else CapabilityResult.unmigrated(reason),
                 )
@@ -591,6 +593,45 @@ class Attention(nn.Module):
         # For Ring: Concat joint_q
         query, key, value, attn_metadata, ctx = strategy.pre_attention(query, key, value, attn_metadata)
 
+        # MiniMax-H3 Tier2 stores reference K/V in the balanced layout produced
+        # by Ulysses. Keeping this hook at the generic post-parallel boundary
+        # avoids a model import in the parallel strategy and leaves other models
+        # untouched unless they explicitly provide the request-local state.
+        post_parallel_ref = (
+            attn_metadata.extra.get("minimax_h3_reference_kv_post_parallel") if attn_metadata is not None else None
+        )
+        transport_padding = 0
+        alignment_layout = (
+            attn_metadata.extra.get("minimax_h3_transport_alignment") if attn_metadata is not None else None
+        )
+        if alignment_layout is not None:
+            if use_paged_attention or self.use_ring or strategy.name != "ulysses" or post_parallel_ref is None:
+                raise ValueError("compact transport alignment requires pure Ulysses reference KV")
+            if not post_parallel_ref[2]:
+                raise ValueError("transport alignment may only run on compact reuse")
+            from vllm_omni.diffusion.attention.ops.research_sp_alignment import strip_qkv
+
+            transport_padding = alignment_layout["transport_padding"]
+            query, key, value = strip_qkv(query, key, value, alignment_layout["compact_rows"], transport_padding)
+            state = post_parallel_ref[0]
+            state._research_sp_stripped_calls = getattr(state, "_research_sp_stripped_calls", 0) + 1
+        if post_parallel_ref is not None:
+            if not isinstance(post_parallel_ref, tuple) or len(post_parallel_ref) != 3:
+                raise TypeError("minimax_h3_reference_kv_post_parallel must be a (state, layer_index, compact) tuple")
+            if self.use_ring:
+                raise NotImplementedError("post-Ulysses MiniMax-H3 reference KV requires ring_degree=1")
+            state, layer_index, compact = post_parallel_ref
+            processor = getattr(state, "process_post_parallel_layer", None)
+            if not callable(processor):
+                raise TypeError("MiniMax-H3 reference-KV state does not implement process_post_parallel_layer")
+            key, value = processor(
+                int(layer_index),
+                key,
+                value,
+                compact=bool(compact),
+                parallel_strategy=strategy.name,
+            )
+
         # Scheduler rows describe the logical sequence, while strict Ulysses
         # may append synthetic tokens solely to make the image shard divisible.
         # Remove those tokens after the all-to-all and put zero placeholders
@@ -645,6 +686,14 @@ class Attention(nn.Module):
             padding_start = paged_sp_padding_offset - paged_sp_padding
             output_padding = out.new_zeros((out.shape[0], paged_sp_padding, *out.shape[2:]))
             out = torch.cat((out[:, :padding_start], output_padding, out[:, padding_start:]), dim=1)
+
+        if transport_padding:
+            if out.shape[1] != alignment_layout["compact_rows"]:
+                raise RuntimeError("attention output logical compact length changed")
+            from vllm_omni.diffusion.attention.ops.research_sp_alignment import append_rows
+
+            out = append_rows(out, transport_padding, 1)
+            state._research_sp_restored_calls = getattr(state, "_research_sp_restored_calls", 0) + 1
 
         # 3. Post-processing (Reverse Communication)
         # For Ulysses: AllToAll Output, and AllGather Joint Output
@@ -736,7 +785,7 @@ class Attention(nn.Module):
     def _cross_fallback_blocker(self, attn_metadata: AttentionMetadata | None) -> str | None:
         if self.backend_explicit:
             return (
-                f"Explicit backend {self.attn_backend.get_name()} does not support "
+                f"Explicit backend {cast(type[AttentionBackend], self.attn_backend).get_name()} does not support "
                 f"{self._cross_backend_limitation(attn_metadata)}"
             )
         if attn_metadata is not None and attn_metadata.extra.get("kv_cache_dtype") not in (None, "float"):
@@ -769,7 +818,7 @@ class Attention(nn.Module):
                 blocked = self._cross_fallback_blocker(attn_metadata)
                 if blocked is not None:
                     raise NotImplementedError(blocked)
-                return self.sdpa_fallback.forward(query, key, value, attn_metadata)
+                return cast(SDPAImpl, self.sdpa_fallback).forward(query, key, value, attn_metadata)
         dense_mask = attn_metadata.attn_mask if attn_metadata is not None else None
         # Piecewise backends honor full_attn_spans ahead of attn_mask and never read the
         # dense mask (e.g. HunyuanImage3, which sends both), so there is nothing to divert.

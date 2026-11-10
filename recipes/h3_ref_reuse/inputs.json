@@ -1,0 +1,125 @@
+{
+  "media_included": false,
+  "inputs": [
+    {
+      "path": "case01/01.jpg",
+      "type": "image",
+      "sha256": "cf1bb6e54e9a81637c9686bc7bd941aca2dbee4b50a425045c6767eafe1354b8"
+    },
+    {
+      "path": "case02/persona.png",
+      "type": "image",
+      "sha256": "a222c2d1b937b64e6c48d5b7f3b94c1f71c85b00c6216ed47babb0379e3322e4"
+    },
+    {
+      "path": "case02/01.png",
+      "type": "image",
+      "sha256": "59a4abbd1bfc505dc9c99cc493c48d9a131df2e98b68aeed82d9c94df3a62a51"
+    },
+    {
+      "path": "case02/audio.mp3",
+      "type": "audio",
+      "sha256": "e2a28cd6f59844b3954dd6b93f5d03e67c47cee32e8d6e62b31a97928460054b"
+    },
+    {
+      "path": "case03/persona.png",
+      "type": "image",
+      "sha256": "ccd42a9112c0e5457bc618eaae78dbe23870f15922e46368faf5e46720ebd89e"
+    },
+    {
+      "path": "case03/01.jpg",
+      "type": "image",
+      "sha256": "e7f3bfe768603895a4b15bc26f1dc4fe4c01595b9ecf9dab19dddd95583b2667"
+    },
+    {
+      "path": "case03/02.jpg",
+      "type": "image",
+      "sha256": "2c8c81f53f29a509d99448d930bdaab803e2e77a1ef00c8d6e72d0b782076fed"
+    },
+    {
+      "path": "case03/03.jpg",
+      "type": "image",
+      "sha256": "1fb9d8fc6ca8f6de38c7d05225b02e0a5aa3ff5f98018734035f14d9d215c690"
+    },
+    {
+      "path": "case03/04.jpg",
+      "type": "image",
+      "sha256": "7a5515d14926c096507821c08968aa0210818a483daf7fbb11399e1d08646e4a"
+    },
+    {
+      "path": "case03/audio.mp3",
+      "type": "audio",
+      "sha256": "a2d943a69d60c960bd83b767b4dc5a0dda77bc850c4d3ebeb397f9853b8ccaab"
+    },
+    {
+      "path": "case04/persona.png",
+      "type": "image",
+      "sha256": "f73139b469ea92020350195278f1156695ac01949e2fe33e5e24c8ed8094d539"
+    },
+    {
+      "path": "case04/01.jpg",
+      "type": "image",
+      "sha256": "167fb2911510c8877d91648fc678e0125e75896db43149deeba75432dabcc35c"
+    },
+    {
+      "path": "case04/02.jpg",
+      "type": "image",
+      "sha256": "cf1ea8f51e10acf3485f928c2462bc8d189aacab5b9c422f73044ab7309dc660"
+    },
+    {
+      "path": "case04/03.jpg",
+      "type": "image",
+      "sha256": "9bc0ad3033be0758fb8b0b79852eb6b995f5a795c6de8139f2a451d9edc130ee"
+    },
+    {
+      "path": "case04/04.jpg",
+      "type": "image",
+      "sha256": "4c0261c431a0f3a8f0cc1e692a88544d62be22736fd4cad59a7dc604d5531689"
+    },
+    {
+      "path": "case04/05.jpg",
+      "type": "image",
+      "sha256": "d41cfa18c27f80f4158aea954bfaa161913fec07683b33ec0b4eb6065d3593fa"
+    },
+    {
+      "path": "case04/audio.wav",
+      "type": "audio",
+      "sha256": "8c3525731d38fec6abf497921034fa7c46ddfffada25b9ad707f45d43451592f"
+    },
+    {
+      "path": "case05/persona.png",
+      "type": "image",
+      "sha256": "de380319889b41cdc732906d9a0260aeeb00d86a1b9682eb9ae4fdb6928b6d88"
+    },
+    {
+      "path": "case05/01.png",
+      "type": "image",
+      "sha256": "35716ac1d06a2033c98ab8ca7b2e82e621bfe7c84d918076527df5fba5bc17b3"
+    },
+    {
+      "path": "case05/02.jpg",
+      "type": "image",
+      "sha256": "f1c98f5c356c3921254a6a89d971d8ccafc00bdf9e175914f26f8cebbecbe5fa"
+    },
+    {
+      "path": "case05/audio.wav",
+      "type": "audio",
+      "sha256": "8c3525731d38fec6abf497921034fa7c46ddfffada25b9ad707f45d43451592f"
+    },
+    {
+      "path": "case06/picture1_model.jpg",
+      "type": "image",
+      "sha256": "bacebf67577a31148559cbc46d47f5468af81dd9da425a84809fcd2908177520"
+    },
+    {
+      "path": "case06/picture2_scene.jpg",
+      "type": "image",
+      "sha256": "fdc95ed4b11f97c910d0c075132a3bca5e030f1eaa09c7f122822ac4ba3f6c57"
+    },
+    {
+      "path": "case06/video1_ref_motion.mp4",
+      "type": "video",
+      "sha256": "bd17e655a72931009f11d30c43273a38a725d1c49361fb447f672eff933f5e4a"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "model": "h3",
+  "prompt": "subject_definitions:\n<Subject 1> is the young East Asian woman in <Picture 1>, featuring her fair skin, almond-shaped eyes, slender defined eyebrows, red lips, cool and mature elegant look, dark-brown side-parted long straight hair without bangs falling past her chest, and slim build. Her face and hair come only from <Picture 1>.\n<Subject 2> is the industrial-park street in <Picture 2>, featuring an old red-brick factory building with a rust-red corrugated metal pitched roof on the left, the tall white lattice Canton Tower in the distance, large green trees and hedges on the right, a green-and-white speech-bubble sculpture on a black pedestal at the roadside, grey asphalt, and a clear blue sky in warm late-afternoon sun.\n<Subject 3> is the folding-fan skirt bloom with a golden rim, whose motion pattern comes from <Video 1>: during an inverted flip the skirt opens into a complete semicircular fan around the body, and a glowing golden light arc runs along the fan's outer edge, shedding fine golden sparks. When the fan is fully open, the inner face of the skirt shows two large golden brush-calligraphy Chinese characters \"广州\" printed across its center, flanked on both sides by golden auspicious-cloud motifs.\n\nsummary:\n[reference generation] <Subject 1>, dressed in a crimson-red Hanfu ruqun, performs a backbend flip on the street of <Subject 2>, and her skirt blooms into <Subject 3>, revealing the golden calligraphy \"广州\" on the open fan. <Video 1> provides only the pose sequence and the golden rim effect.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1]): partially_preserved - her face, hair, and build from <Picture 1> are kept; her white off-shoulder shirt, jeans, belt, earrings, necklace, and papers are replaced by a crimson Hanfu ruqun.\n<Subject 2> (appears in [Shot 1]): partially_preserved - the red-brick factory, Canton Tower, trees, speech-bubble sculpture, and asphalt street are kept and extended into a wide landscape view; the watermark text in the lower-right corner of <Picture 2> is omitted.\n<Subject 3> (appears in [Shot 1]): attribute_transfer - the fan-shaped bloom and golden rim arc are transferred onto the crimson ruqun skirt, with the golden calligraphy \"广州\" added on the open fan face.\n<Video 1> (pose sequence): weak_reference - only the broad order of poses and the golden rim effect are borrowed; the dancer, her face, costume, background, and framing are not used.\n\ndetailed_description:\nThe target video is a realistic short with warm late-afternoon light, contrasting traditional Hanfu with a modern brick industrial park. [Shot 1] Fixed eye-level wide shot. <Subject 2> fills the frame: the long red-brick factory with its rust-red metal roof runs along the left, the white lattice Canton Tower rises against the blue sky in the distance, tall trees and hedges line the right side, and the green-and-white speech-bubble sculpture stands at the right edge of the road. <Subject 1> stands in the middle of the grey asphalt road facing the camera with a calm, faint smile, arms relaxed at her sides. She wears a crimson-red Hanfu ruqun: a fitted crimson bodice tied high under the chest with a pale-gold sash, thin translucent blush-pink sleeves covering her arms to the wrists, and a very full pleated crimson skirt with a narrow pale-gold embroidered hem. Her dark-brown side-parted hair hangs long and straight over one shoulder; she has no bangs and wears no earrings or necklace. At 00:02.000, she arches backward, plants one hand on the asphalt, and flips her body over; the crimson skirt swings out and opens around her into <Subject 3>, a full semicircular fan of crimson pleats facing the camera; across the center of the open fan two large golden brush-calligraphy characters \"广州\" read clearly from left to right, with bold flowing strokes, flanked by golden auspicious-cloud motifs on both sides, while a glowing golden arc sweeps along its outer rim and sheds fine golden sparks in the sunlight. Her long brown hair whips downward with the inversion. At 00:04.000, she rolls into a side kneel, one hand lifting the hem to hold the crimson fan open beside her so that \"广州\" stays visible on the fabric as the golden arc travels up its edge. At 00:06.000, the golden arc fades into drifting sparks; she lowers herself forward and lies prone on the road, arms stretched to both sides, the crimson skirt spread flat to the left and right like an open fan. She lifts her face toward the camera, showing her almond eyes and red lips, and holds still until the end. Warm side light from the low sun rakes across the road, casting long tree shadows over her skirt.\n\noverall_soundscape:\nLeaves rustle in a light breeze, distant city traffic hums softly, and a few birds chirp in the trees. Fabric whooshes during the flip and settles with a soft rustle on the asphalt.\n\nnon_diegetic_music:\nN/A\n",
+  "seconds": 9,
+  "task": "ref2va",
+  "conditions": [
+    {
+      "type": "image",
+      "uri": "case06/picture1_model.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case06/picture2_scene.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "video",
+      "uri": "case06/video1_ref_motion.mp4",
+      "role": "reference"
+    }
+  ],
+  "target": {
+    "short_edge": 768,
+    "aspect_ratio": "16:9",
+    "duration_seconds": 9
+  },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 8,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 580331635
+}

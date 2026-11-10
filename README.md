@@ -1,3 +1,11 @@
+## H3-RefReuse：MiniMax-H3 参考复用推理
+
+此分支提供不含 RBS 的八步 LoRA + NPU 参考 KV 复用 + 矩形 mix attention 实验实现。
+同 LoRA 对照下，D045 六例 E2E 中位耗时减少 2.36%–18.50%；单 seed、每组 n=3，画质待人工评价。
+完整代码、优化点、环境、六例请求与结果见 **[H3-RefReuse 复现指南](recipes/h3_ref_reuse/README.md)**。
+
+---
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/vllm-project/vllm-omni/refs/heads/main/docs/source/logos/vllm-omni-logo.png">

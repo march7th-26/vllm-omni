@@ -1,0 +1,53 @@
+{
+  "model": "MiniMax-H3",
+  "prompt": "subject_definitions:\n<Subject 1> is a real Han Chinese 35-44 female in <Picture 1>, with natural light makeup, hair tied back in a low ponytail, wearing a clean white cotton apron over a simple grey t-shirt, sleeves rolled up to the elbows, whose demeanour reads as calm, focused, slightly concerned about daily habits. The target video preserves the exact facial features, hairstyle, makeup and wardrobe from the reference with no change to identity. <Picture 1> supplies Persona identity only; it never defines Product appearance. Always discard the studio or portrait background.\n<Subject 2> is the physical retail package of 500ml in <Picture 2> and <Picture 3> and <Picture 6> (same physical product, complementary views; one Subject only): tall slender dark amber glass bottle with black screw cap and cream yellow label. The large printing on the package reads: ® / 100% Natural / / Tiger Nut Oil / / Omega-9 70%-80% / /:500ml /:250ml; 500ml- / 500ml- / 500ml- / 500ml- / 250ml- / 250ml- / 250ml- / 250ml- / Tiger Nut Oil /. Appearance references of this same package include its front, back, side views; they are complementary sides of one object, not different products. When an edible unit is visible outside its inner wrapper it looks exactly like this: clear golden yellow liquid oil Their shape must not be altered. The container type, proportions and colour scheme stay identical in every shot. No advertising layout, price banner, callout badge or poster background from any source image appears in the target video. <Picture 2> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity. <Picture 3> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity. <Picture 6> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n<Subject 3> is a non-identity environment/action context in <Picture 4> and <Picture 5>. It may supply only authorized composition, handling and relative-scale cues; source people and Product appearance are never copied. <Picture 4> is product-context-only; it may guide only the allowed action, fit, grip or relative scale. Always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity. <Picture 5> is product-context-only; it may guide only the allowed action, fit, grip or relative scale. Always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n<Audio 1> is the voice timbre reference for the off-screen narrator, containing a warm, clear adult female voice that sounds steady and reassuring, with a natural conversational pace suited to kitchen setting narration.\n\nsummary:\n[reference generation + audio reference] Explicit reference mapping: <Picture 1> supplies only identity for <Subject 1>; <Picture 2> supplies only reverse view for <Subject 2>; <Picture 3> supplies only primary contents for <Subject 2>; <Picture 4> supplies only in use action for <Subject 3>; <Picture 5> supplies only in use action for <Subject 3>; <Picture 6> supplies only primary identity for <Subject 2>. A vertical 13-second commercial featuring a woman in a home kitchen demonstrating the benefits of tiger nut oil. The sequence moves from cooking action to close-up label inspection, ending with a friendly recommendation. <Picture 1> supplies only identity for <Subject 1>; <Picture 2> supplies only reverse view for <Subject 2>; <Picture 3> supplies only primary contents for <Subject 2>; <Picture 4> supplies only in use action for <Subject 3>; <Picture 5> supplies only in use action for <Subject 3>; <Picture 6> supplies only primary identity for <Subject 2>.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 3]): fully_preserved - face, hair, makeup, age, body proportions, and styling remain identical to the reference portrait.\n<Subject 2> (appears in [Shot 1], [Shot 2], [Shot 3]): partially_preserved - the physical bottle geometry, material, and verified print are preserved, while superimposed marketing overlays and price banners from the source posters are omitted.\n<Subject 3> (appears in [Shot 1], [Shot 2], [Shot 3]): weak_reference - only the kitchen counter, wok, and salad bowl composition cues are used; source people and specific food items are excluded.\n<Audio 1>: reference - provides the off-screen narrator's timbre and speaking style without copying original words.\n\ndetailed_description:\nApart from the printing that physically exists on the product packaging itself, the target video renders no text of any kind: no captions, no subtitles, no marketing copy, no price tags, no badges, no watermarks, no logos and no on-screen graphics are added to the frame at any moment. Dialogue is heard only and is never shown as subtitles. Only the large printed elements of the packaging are described and expected to be legible. Fine print is not enumerated and macro framing tight enough to resolve it is avoided.\nThe video presents realistic vertical short-form commerce footage shot on a modern phone camera, using natural lighting and handheld motion with slight stabilization. The environment is a bright, tidy kitchen dining area with a palette of warm neutrals and restrained product accents.\n\n[Shot 1] a medium close-up is angled slightly down to capture a black wok on a gas stove, where a hand slowly rotates one sealed physical product to reveal a different verified exterior angle. Soft natural key light illuminates the workspace, highlighting the steam rising from the sizzling vegetables. the off-screen narrator voice (S1), not produced by the visible subject's mouth, clearly stressing “烟点高” and \"少油烟\": <d>[Chinese] 烟点高，热炒少油烟，完全不会呛人。</d>\n\n[Shot 2] At 00:03.200, an extreme close-up maintains static focus on the label area of the bottle being pointed to. A hand points to the ingredient list section on the back of the bottle, with the finger tracing the line indicating the single ingredient against the blurred background. the off-screen narrator voice (S1), not produced by the visible subject's mouth, clearly stressing “配料表干净”, \"只有油莎豆\" and \"物理冷榨\": <d>[Chinese] 配料表干净，只有油莎豆，物理冷榨。</d>\n\n[Shot 3] At 00:07.789, a medium shot uses a slight pull-back to include both the persona and the product arrangement in a static framing. <Subject 1> places the bottle gently on the counter next to the salad bowl, gesturing towards the bottle with an open palm while making direct eye contact with the camera. Bright, inviting daylight fills the scene as the off-screen narrator voice (S1), not produced by the visible subject's mouth: <d>[Chinese] 点击购买沙漠一号虎坚果油，给家人换一种更耐热的日常好油。</d>\n\noverall_soundscape:\nOnly diegetic ambient and action sounds are present; no background music. The soundscape combines gentle sizzling of vegetables and soft gas flame hiss with the soft thud of the bottle being placed on the counter. Very faint room tone emphasizes the clarity of the message, creating an upbeat ambient kitchen silence throughout the clip.\n\nnon_diegetic_music:\nN/A",
+  "seconds": 13,
+  "task": "ref2va",
+  "conditions": [
+    {
+      "type": "image",
+      "uri": "case04/persona.png",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case04/01.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case04/02.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case04/03.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case04/04.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case04/05.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "audio",
+      "uri": "case04/audio.wav",
+      "role": "reference"
+    }
+  ],
+  "target": {
+    "short_edge": 768,
+    "aspect_ratio": "9:16",
+    "duration_seconds": 13
+  },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 8,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 580331635
+}

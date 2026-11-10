@@ -1,0 +1,48 @@
+{
+  "model": "MiniMax-H3",
+  "prompt": "subject_definitions:\n<Subject 1> is the real Han Chinese 25-34 male in <Picture 1>, with short neat black hair, clean shaven face, natural skin tone with light matte finish, wearing T, whose demeanour reads as. The target video preserves the exact facial features, hairstyle, makeup and wardrobe from the reference with no change to identity. <Picture 1> supplies Persona identity only; it never defines Product appearance. Always discard the studio or portrait background.\n<Subject 2> is the physical retail package of in <Picture 2> and <Picture 3> and <Picture 5> (same physical product, complementary views; one Subject only), shown as the real object. The container form was not extracted, so the package must be reproduced exactly as it appears in the reference image without changing its container type or proportions. When an edible unit is visible outside its inner wrapper it looks exactly like this: Round flat flaky pastry with golden-brown crust and dark granular filling visible when cut open. Their shape must not be altered. The container type, proportions and colour scheme stay identical in every shot. No advertising layout, price banner, callout badge or poster background from any source image appears in the target video. <Picture 2> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity. <Picture 3> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n<Subject 3> is a non-identity environment/action context in <Picture 4>. It may supply only authorized composition, handling and relative-scale cues; source people and Product appearance are never copied. <Picture 4> is product-context-only; it may guide only the allowed action, fit, grip or relative scale. Always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n<Audio 1> is the voice timbre reference for <Subject 1>'s on-screen dialogue, containing the adult male speaking style described in the brief.\n\nsummary:\n[reference generation + audio reference] Explicit reference mapping: <Picture 1> supplies only identity for <Subject 1>; <Picture 2> supplies only package front + primary identity for <Subject 2>; <Picture 3> supplies only contents + primary contents for <Subject 2>; <Picture 4> supplies only in use action for <Subject 3>; <Picture 5> supplies only claim visualization + variant identity for <Subject 2>. A realistic vertical short-form commerce clip set in a modern office desk environment during daytime. <Picture 1> supplies only identity for <Subject 1>; <Picture 2> supplies only package front + primary identity for <Subject 2>; <Picture 3> supplies only contents + primary contents for <Subject 2>; <Picture 4> supplies only in use action for <Subject 3>; <Picture 5> supplies only claim visualization + variant identity for <Subject 2>.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1]): fully_preserved - Exact facial features, hairstyle, and wardrobe from the reference are maintained with no changes to identity.\n<Subject 2> (appears in [Shot 1], [Shot 2]): partially_preserved - Physical product geometry and material are preserved, while superimposed marketing text, price overlays, and promotional badges from the source images are omitted.\n<Subject 3> (appears in [Shot 2]): weak_reference - Only the authorized action context and relative scale cues are used; human identity and specific product appearance from the source are excluded.\n<Audio 1>: reference - Provides the timbre and age feel for the narrator's voice without copying the original words.\n\ndetailed_description:\nApart from the printing that physically exists on the product packaging itself, the target video renders no text of any kind: no captions, no subtitles, no marketing copy, no price tags, no badges, no watermarks, no logos and no on-screen graphics are added to the frame at any moment. Dialogue is heard only and is never shown as subtitles. Only the large printed elements of the packaging are described and expected to be legible. Fine print is not enumerated and macro framing tight enough to resolve it is avoided.\nThe video presents a realistic vertical short-form commerce narrative with soft natural key lighting and a warm neutral palette. The setting is a modern office desk with bright, even illumination from a window on the left.\n\n[Shot 1] a medium close-up at eye level captures a stable frame with slight handheld micro-movement. In the foreground, a single hand enters holding a round, golden-brown scallion salt crispy mooncake, tilting it gently to highlight the flaky layers against a blurred white desk surface. <Subject 1> (S1) speaks with synchronized lips, delivering a confident and slightly humorous line: clearly stressing “别再买假手工了 看这面粉是怎么飞起来的” <d>[Chinese] 别再买假手工了！看这面粉是怎么飞起来的</d>\n\n[Shot 2] At 00:03.451, the scene transitions into an abstract conceptual space with soft warm lighting and floating particles. Fine flour particles swirl in slow motion, settling into a mound as stylized hands knead the dough rhythmically. the off-screen narrator voice (S1), not produced by the visible subject's mouth, provides a steady and informative narration: <d>[Chinese] 严选优质面粉，反复揉搓出层次。黑芝麻、核桃仁、葵花籽仁，全是真材实料。</d>\n\noverall_soundscape:\nOnly diegetic ambient and action sounds are present; no background music. Subtle office ambient hum and faint keyboard clicks in the distance provide a consistent background layer. Specific foley effects include the crisp sound of pastry flakes shifting, soft whooshing of moving flour, and rhythmic thumping that mimics manual dough kneading.\n\nnon_diegetic_music:\nN/A",
+  "seconds": 11,
+  "task": "ref2va",
+  "conditions": [
+    {
+      "type": "image",
+      "uri": "case03/persona.png",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case03/01.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case03/02.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case03/03.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case03/04.jpg",
+      "role": "reference"
+    },
+    {
+      "type": "audio",
+      "uri": "case03/audio.mp3",
+      "role": "reference"
+    }
+  ],
+  "target": {
+    "short_edge": 768,
+    "aspect_ratio": "9:16",
+    "duration_seconds": 11
+  },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 8,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 580331635
+}

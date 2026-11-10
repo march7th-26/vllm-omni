@@ -1,0 +1,23 @@
+{
+  "model": "MiniMax-H3",
+  "prompt": "subject_definitions:\n<Subject 1> is the physical retail package of 300g/ in <Picture 1>, shown as a real stand-up brown pouch with cat-head coffee liquid motif, yellow cup illustration, green low-sugar badge and large Chinese product name. The locked front printing includes ·, and, while excluding poster typography, marketing overlay, price badge, decorative text, source background clutter, and any person identity from the reference image. The package stays closed and sealed; its contents are never shown, and no loose units, opened package or poured-out contents appear. The container type, proportions and colour scheme stay identical in every shot. <Picture 1> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n\nsummary:\n[reference generation] Explicit reference mapping: <Picture 1> supplies only primary identity for <Subject 1>. This vertical commerce short presents one sealed coffee pouch as a clean hero close-up. <Picture 1> supplies only primary identity for <Subject 1>.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1]): partially_preserved - the single upright pouch retains its brown pouch geometry, cat-head coffee motif, yellow cup illustration, green low-sugar badge, product name print and sealed retail packaging.\n\ndetailed_description:\nApart from the printing that physically exists on the product packaging itself, the target video renders no text of any kind: no captions, no subtitles, no marketing copy, no price tags, no badges, no watermarks, no logos and no on-screen graphics are added to the frame at any moment. Dialogue is heard only and is never shown as subtitles. Only the large printed elements of the packaging are described and expected to be legible. Fine print is not enumerated and macro framing tight enough to resolve it is avoided.\nThe footage uses realistic vertical short-form product photography with soft controlled studio light and warm neutral tones. A single sealed coffee pouch remains the only visible object, with no added subtitles, promotional overlays or price graphics.\n\n[Shot 1] a medium close-up at eye level frames the upright pouch against a clean neutral studio background with soft gradient lighting. The camera holds a controlled static frame while making a slow push-in toward the package, preserving its exact shape, label layout and sealed state. No person, face, body, hand or human silhouette appears in the shot, and there is no spoken dialogue. The pouch settles into a stable product-readable pose as the shot ends.\n\noverall_soundscape:\nOnly diegetic ambient and action sounds are present; no background music. Subtle room tone dominates, with a faint surface movement under the quiet product presentation.\n\nnon_diegetic_music:\nN/A",
+  "seconds": 4,
+  "task": "ref2va",
+  "conditions": [
+    {
+      "type": "image",
+      "uri": "case01/01.jpg",
+      "role": "reference"
+    }
+  ],
+  "target": {
+    "short_edge": 768,
+    "aspect_ratio": "9:16",
+    "duration_seconds": 4
+  },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 8,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 580331635
+}

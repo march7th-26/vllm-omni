@@ -1,0 +1,33 @@
+{
+  "model": "MiniMax-H3",
+  "prompt": "subject_definitions:\n<Subject 1> is the real Han Chinese 25-34 female in <Picture 1>, with clean minimal makeup, hair tied back in a low bun, natural skin texture without heavy filters, wearing, whose demeanour reads as. The target video preserves the exact facial features, hairstyle, makeup and wardrobe from the reference with no change to identity. <Picture 1> supplies Persona identity only; it never defines Product appearance. Always discard the studio or portrait background.\n<Subject 2> is the physical retail package of WISin <Picture 2>, shown as the real object: rectangular blue cardboard carton with front label, side information panel and open-top tray for individual ampoule vials. The large printing on the package reads: +WIS+® [6¹ | ]:1.5mL×30; +WIS+® Deep sea refining tender ESSENCE ··· Anti-wrinkle/firming/moisturizing/soothing 6⁵ 800:1.5mL×30; +WIS+®; +WIS+® Deep sea refining tender ESSENCE ··· Anti-wrinkle/firming/moisturizing/soothing 6⁵ 800:1.5mL×30. Appearance references of this same package include its front, side views; they are complementary sides of one object, not different products. The contents of the package are never shown: the package stays closed and sealed, and no loose units, opened package or poured-out contents appear in any shot. The container type, proportions and colour scheme stay identical in every shot. No advertising layout, price banner, callout badge or poster background from any source image appears in the target video. <Picture 2> is product-only; always discard source faces, hairstyles, skin tone, body proportions, hand identity, jewellery, model pose and clothing-model identity and source background. The source person never defines Persona identity.\n<Audio 1> is the voice timbre reference for <Subject 1>'s on-screen dialogue, containing the warm, clear, mid-pitched speaking quality of an adult woman.\n\nsummary:\n[reference generation + audio reference] Explicit reference mapping: <Picture 1> supplies only identity for <Subject 1>; <Picture 2> supplies only package front + primary identity for <Subject 2>. A vertical short-form commerce clip showing a young adult woman presenting a skincare product at a home vanity corner. <Picture 1> supplies only identity for <Subject 1>. <Picture 2> supplies only package front + primary identity for <Subject 2>.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - face, hair, makeup, age, body proportions, and styling remain identical across both shots.\n<Subject 2> (appears in [Shot 1]): partially_preserved - physical product geometry, material, colour, construction, and all verified attached print preserved exactly as in the reference.\n<Audio 1>: reference - voice timbre, age feel, and delivery style used for on-screen dialogue synchronization.\n\ndetailed_description:\nApart from the printing that physically exists on the product packaging itself, the target video renders no text of any kind: no captions, no subtitles, no marketing copy, no price tags, no badges, no watermarks, no logos and no on-screen graphics are added to the frame at any moment. Dialogue is heard only and is never shown as subtitles. Only the large printed elements of the packaging are described and expected to be legible. Fine print is not enumerated and macro framing tight enough to resolve it is avoided.\nRealistic vertical short-form commerce footage in a modern home setting, lit by soft natural key light with warm neutral tones and restrained product accents.\n\n[Shot 1] static medium close-up centered on face and upper torso at eye level with 50mm equivalent lens, controlled static frame with slight zoom-in during product placement. Soft natural key light illuminates the scene with warm neutrals. <Subject 1> faces the camera with a relaxed smile, her expression conveying calm confidence. She places <Subject 2> steadily on the marble countertop with both hands, adjusting its position slightly before releasing grip. Her action resolves in a stable product-readable pose. <Subject 1> (S1), with synchronized lips, clearly stressing “温和清爽”: <d>[Chinese] 温和清爽，入门简单无负担</d>\n\n[Shot 2] At 00:04.056, medium close-up static framing at eye level with 50mm equivalent lens, slight upward tilt following gesture direction, keeping face and gesturing hand in focus. Same soft natural key lighting with warm neutral palette. <Subject 1> gestures toward the lower part of the frame with an open palm, indicating a digital link location off-screen. She maintains eye contact with the camera while smiling encouragingly, nodding slightly to reinforce the call to action. <Subject 1> (S1), with synchronized lips: <d>[Chinese] 点击链接，开启你的清爽抗初老第一步。</d>\n\noverall_soundscape:\nOnly diegetic ambient and action sounds are present; no background music. Quiet domestic room ambience with faint HVAC hum and subtle echo in an enclosed space. Soft thud of carton landing on marble surface in Shot 1, followed by a subtle adjustment sound. Subtle finger snap accompanying the gesture in Shot 2. No BGM.\n\nnon_diegetic_music:\nN/A",
+  "seconds": 8,
+  "task": "ref2va",
+  "conditions": [
+    {
+      "type": "image",
+      "uri": "case02/persona.png",
+      "role": "reference"
+    },
+    {
+      "type": "image",
+      "uri": "case02/01.png",
+      "role": "reference"
+    },
+    {
+      "type": "audio",
+      "uri": "case02/audio.mp3",
+      "role": "reference"
+    }
+  ],
+  "target": {
+    "short_edge": 768,
+    "aspect_ratio": "9:16",
+    "duration_seconds": 8
+  },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 8,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 580331635
+}

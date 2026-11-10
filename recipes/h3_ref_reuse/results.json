@@ -1,0 +1,1962 @@
+{
+  "experiment": "D045",
+  "formal_samples_per_case_and_variant": 3,
+  "warmups_per_case_and_variant": 1,
+  "seed": 580331635,
+  "msprof": false,
+  "quality": "pending human review",
+  "summary": [
+    {
+      "case": "case01",
+      "requested_seconds": 4,
+      "reference_types_in_order": [
+        "image"
+      ],
+      "lora_baseline_e2e_s": 31.51251,
+      "ref_reuse_e2e_s": 25.990828,
+      "latency_reduction_percent": 17.522190393592886,
+      "lora_baseline_dit_s": 22.376326643003267,
+      "ref_reuse_dit_s": 16.841668711997045,
+      "formal_e2e_s": [
+        25.990828,
+        25.967145,
+        26.028307
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 51,
+        "max_power_W": 749.8,
+        "max_hbm_MiB_by_card": {
+          "0": 67757,
+          "1": 67668,
+          "2": 67769,
+          "3": 67390,
+          "4": 67653,
+          "5": 67393,
+          "6": 67629,
+          "7": 67552
+        }
+      }
+    },
+    {
+      "case": "case02",
+      "requested_seconds": 8,
+      "reference_types_in_order": [
+        "image",
+        "image",
+        "audio"
+      ],
+      "lora_baseline_e2e_s": 18.627391,
+      "ref_reuse_e2e_s": 18.187716,
+      "latency_reduction_percent": 2.36036812670114,
+      "lora_baseline_dit_s": 13.192239162002807,
+      "ref_reuse_dit_s": 12.752173753993702,
+      "formal_e2e_s": [
+        18.169252,
+        18.296448,
+        18.187716
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 51,
+        "max_power_W": 693.5,
+        "max_hbm_MiB_by_card": {
+          "0": 66998,
+          "1": 66943,
+          "2": 66883,
+          "3": 66985,
+          "4": 67028,
+          "5": 66988,
+          "6": 66984,
+          "7": 66987
+        }
+      }
+    },
+    {
+      "case": "case03",
+      "requested_seconds": 11,
+      "reference_types_in_order": [
+        "image",
+        "image",
+        "image",
+        "image",
+        "image",
+        "audio"
+      ],
+      "lora_baseline_e2e_s": 30.39425,
+      "ref_reuse_e2e_s": 29.497199,
+      "latency_reduction_percent": 2.9513838966251926,
+      "lora_baseline_dit_s": 22.21783244299877,
+      "ref_reuse_dit_s": 21.38764044400159,
+      "formal_e2e_s": [
+        29.497199,
+        29.426471,
+        29.562248
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 52,
+        "max_power_W": 727.9,
+        "max_hbm_MiB_by_card": {
+          "0": 67221,
+          "1": 67266,
+          "2": 67246,
+          "3": 67269,
+          "4": 67251,
+          "5": 67311,
+          "6": 67228,
+          "7": 67290
+        }
+      }
+    },
+    {
+      "case": "case04",
+      "requested_seconds": 13,
+      "reference_types_in_order": [
+        "image",
+        "image",
+        "image",
+        "image",
+        "image",
+        "image",
+        "audio"
+      ],
+      "lora_baseline_e2e_s": 40.010846,
+      "ref_reuse_e2e_s": 38.577943,
+      "latency_reduction_percent": 3.581286434183384,
+      "lora_baseline_dit_s": 30.109573927002202,
+      "ref_reuse_dit_s": 28.648701083999185,
+      "formal_e2e_s": [
+        38.577943,
+        38.618121,
+        38.484709
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 53,
+        "max_power_W": 718.9,
+        "max_hbm_MiB_by_card": {
+          "0": 67464,
+          "1": 67350,
+          "2": 67352,
+          "3": 67414,
+          "4": 67474,
+          "5": 67397,
+          "6": 67432,
+          "7": 67416
+        }
+      }
+    },
+    {
+      "case": "case05",
+      "requested_seconds": 15,
+      "reference_types_in_order": [
+        "image",
+        "image",
+        "image",
+        "audio"
+      ],
+      "lora_baseline_e2e_s": 58.034483,
+      "ref_reuse_e2e_s": 53.213185,
+      "latency_reduction_percent": 8.307643578043077,
+      "lora_baseline_dit_s": 44.628985863004345,
+      "ref_reuse_dit_s": 39.90160508300323,
+      "formal_e2e_s": [
+        53.1685,
+        53.280051,
+        53.213185
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 53,
+        "max_power_W": 750.2,
+        "max_hbm_MiB_by_card": {
+          "0": 67644,
+          "1": 67551,
+          "2": 67633,
+          "3": 67554,
+          "4": 67635,
+          "5": 67637,
+          "6": 67833,
+          "7": 67636
+        }
+      }
+    },
+    {
+      "case": "case06",
+      "requested_seconds": 9,
+      "reference_types_in_order": [
+        "image",
+        "image",
+        "video"
+      ],
+      "lora_baseline_e2e_s": 55.416239,
+      "ref_reuse_e2e_s": 45.161609,
+      "latency_reduction_percent": 18.50473829521343,
+      "lora_baseline_dit_s": 38.37818970900116,
+      "ref_reuse_dit_s": 28.23278851500072,
+      "formal_e2e_s": [
+        45.161609,
+        45.204988,
+        45.139534
+      ],
+      "resources": {
+        "health_states": [
+          "OK"
+        ],
+        "max_temperature_C": 52,
+        "max_power_W": 736.8,
+        "max_hbm_MiB_by_card": {
+          "0": 74175,
+          "1": 74083,
+          "2": 74161,
+          "3": 74125,
+          "4": 74427,
+          "5": 74086,
+          "6": 74183,
+          "7": 74147
+        }
+      }
+    }
+  ],
+  "samples": [
+    {
+      "case": "case01",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 41.543839,
+      "sha256": "b7bb136af2d5a994353f88814dd472c1887b3a616721d47e9d5d051d3ffcfb59",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.885155189003854,
+        "MiniMaxH3Pipeline._encode_local_media": 1.2992341009958182,
+        "MiniMaxH3Pipeline.diffuse": 30.274678410998604,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5734312649947242,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8527893560021766,
+        "MiniMaxH3Pipeline.decode": 2.493330926001363,
+        "queue_wait_ms": 0.3701800014823675,
+        "stage_0_gen_ms": 41203.70650291443
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 29.343153,
+      "sha256": "b7bb136af2d5a994353f88814dd472c1887b3a616721d47e9d5d051d3ffcfb59",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.37276501100132,
+        "MiniMaxH3Pipeline._encode_local_media": 1.2072384359998978,
+        "MiniMaxH3Pipeline.diffuse": 20.22448425499897,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5462880929990206,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.81325000400102,
+        "MiniMaxH3Pipeline.decode": 2.479329714005871,
+        "queue_wait_ms": 0.37628100108122453,
+        "stage_0_gen_ms": 29022.148847579956
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 29.334256,
+      "sha256": "b7bb136af2d5a994353f88814dd472c1887b3a616721d47e9d5d051d3ffcfb59",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.3647471939984825,
+        "MiniMaxH3Pipeline._encode_local_media": 1.200487800000701,
+        "MiniMaxH3Pipeline.diffuse": 20.257809061993612,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5823786219989415,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8133245339995483,
+        "MiniMaxH3Pipeline.decode": 2.462691821005137,
+        "queue_wait_ms": 0.26220000290777534,
+        "stage_0_gen_ms": 29004.344940185547
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 29.379284,
+      "sha256": "b7bb136af2d5a994353f88814dd472c1887b3a616721d47e9d5d051d3ffcfb59",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.379183055993053,
+        "MiniMaxH3Pipeline._encode_local_media": 1.2015252909986884,
+        "MiniMaxH3Pipeline.diffuse": 20.324103446000663,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.55673164199834,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8132640339972568,
+        "MiniMaxH3Pipeline.decode": 2.436786819998815,
+        "queue_wait_ms": 1.2118509985157289,
+        "stage_0_gen_ms": 29057.726621627808
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 42.522736,
+      "sha256": "dea942048a81b788e8d1c512df51ffc4dad3c5e648a8ce3a17e7dcf145d1824b",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.899336861002666,
+        "MiniMaxH3Pipeline._encode_local_media": 1.2889221029981854,
+        "MiniMaxH3Pipeline.diffuse": 31.058029432002513,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5697633320014575,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8712784909948823,
+        "MiniMaxH3Pipeline.decode": 2.568439397000475,
+        "queue_wait_ms": 0.31451099494006485,
+        "stage_0_gen_ms": 42142.61841773987
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 24.531835,
+      "sha256": "dea942048a81b788e8d1c512df51ffc4dad3c5e648a8ce3a17e7dcf145d1824b",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.440061135996075,
+        "MiniMaxH3Pipeline._encode_local_media": 1.2097876779953367,
+        "MiniMaxH3Pipeline.diffuse": 15.30519593799545,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5376617650035769,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8135993049945682,
+        "MiniMaxH3Pipeline.decode": 2.4785687440016773,
+        "queue_wait_ms": 0.2765809986158274,
+        "stage_0_gen_ms": 24214.41960334778
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 24.787949,
+      "sha256": "dea942048a81b788e8d1c512df51ffc4dad3c5e648a8ce3a17e7dcf145d1824b",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.348724231000233,
+        "MiniMaxH3Pipeline._encode_local_media": 1.5881871870005853,
+        "MiniMaxH3Pipeline.diffuse": 15.24273206700309,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5323327309961314,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8136240539970458,
+        "MiniMaxH3Pipeline.decode": 2.4750729910010705,
+        "queue_wait_ms": 0.3067299985559657,
+        "stage_0_gen_ms": 24439.310789108276
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 24.744019,
+      "sha256": "dea942048a81b788e8d1c512df51ffc4dad3c5e648a8ce3a17e7dcf145d1824b",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.396410159999505,
+        "MiniMaxH3Pipeline._encode_local_media": 1.4051544569956604,
+        "MiniMaxH3Pipeline.diffuse": 15.288872655000887,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5364555649939575,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8135795350026456,
+        "MiniMaxH3Pipeline.decode": 2.4832654880010523,
+        "queue_wait_ms": 0.3861600052914582,
+        "stage_0_gen_ms": 24401.034593582153
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 44.53815,
+      "sha256": "1d2b92e886c9aab14895982379015b01180d1e514d291f6c68181f932a0bcfc1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.923131880001165,
+        "MiniMaxH3Pipeline._encode_local_media": 1.3048385860020062,
+        "MiniMaxH3Pipeline.diffuse": 32.88150147000124,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5649474279998685,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8612534440035233,
+        "MiniMaxH3Pipeline.decode": 2.494929487002082,
+        "queue_wait_ms": 0.35691000084625557,
+        "stage_0_gen_ms": 43910.89487075806
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 31.513937,
+      "sha256": "1d2b92e886c9aab14895982379015b01180d1e514d291f6c68181f932a0bcfc1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.3846315310001955,
+        "MiniMaxH3Pipeline._encode_local_media": 1.1661136820039246,
+        "MiniMaxH3Pipeline.diffuse": 22.352833682998607,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5340420829961658,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8127898740058299,
+        "MiniMaxH3Pipeline.decode": 2.4251147200047853,
+        "queue_wait_ms": 0.34740100090857595,
+        "stage_0_gen_ms": 31080.304384231567
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 31.450731,
+      "sha256": "1d2b92e886c9aab14895982379015b01180d1e514d291f6c68181f932a0bcfc1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.35438162599894,
+        "MiniMaxH3Pipeline._encode_local_media": 1.171684226996149,
+        "MiniMaxH3Pipeline.diffuse": 22.376326643003267,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5475392730004387,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8127335229946766,
+        "MiniMaxH3Pipeline.decode": 2.4328311369972653,
+        "queue_wait_ms": 0.31942000350682065,
+        "stage_0_gen_ms": 31076.281309127808
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 31.51251,
+      "sha256": "1d2b92e886c9aab14895982379015b01180d1e514d291f6c68181f932a0bcfc1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.357478288002312,
+        "MiniMaxH3Pipeline._encode_local_media": 1.181867904997489,
+        "MiniMaxH3Pipeline.diffuse": 22.384030909001012,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5369788850002806,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8127547539988882,
+        "MiniMaxH3Pipeline.decode": 2.4233462390038767,
+        "queue_wait_ms": 0.4045000023324974,
+        "stage_0_gen_ms": 31088.684797286987
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 44.979379,
+      "sha256": "19a46c3b1ac822b58de5e14e55ea59836928fbe2e03e5675261a94413568963f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.943792726997344,
+        "MiniMaxH3Pipeline._encode_local_media": 1.3071442670043325,
+        "MiniMaxH3Pipeline.diffuse": 33.471420221998414,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.604551199998241,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8600306819935213,
+        "MiniMaxH3Pipeline.decode": 2.608334129996365,
+        "queue_wait_ms": 0.4222899951855652,
+        "stage_0_gen_ms": 44613.47699165344
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 25.990828,
+      "sha256": "19a46c3b1ac822b58de5e14e55ea59836928fbe2e03e5675261a94413568963f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.383937369995692,
+        "MiniMaxH3Pipeline._encode_local_media": 1.1794493130000774,
+        "MiniMaxH3Pipeline.diffuse": 16.811729278000712,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.551559867002652,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8128850240027532,
+        "MiniMaxH3Pipeline.decode": 2.512757281001541,
+        "queue_wait_ms": 0.956861003942322,
+        "stage_0_gen_ms": 25647.292613983154
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 25.967145,
+      "sha256": "19a46c3b1ac822b58de5e14e55ea59836928fbe2e03e5675261a94413568963f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.366773396002827,
+        "MiniMaxH3Pipeline._encode_local_media": 1.1746585899963975,
+        "MiniMaxH3Pipeline.diffuse": 16.841668711997045,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.5635277870023856,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8127128429987351,
+        "MiniMaxH3Pipeline.decode": 2.5251789320027456,
+        "queue_wait_ms": 0.27821100229630247,
+        "stage_0_gen_ms": 25623.480796813965
+      }
+    },
+    {
+      "case": "case01",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 26.028307,
+      "sha256": "19a46c3b1ac822b58de5e14e55ea59836928fbe2e03e5675261a94413568963f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 4.3616401519975625,
+        "MiniMaxH3Pipeline._encode_local_media": 1.1876761900057318,
+        "MiniMaxH3Pipeline.diffuse": 16.861119528999552,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 1.550704487002804,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 0.8127731740023592,
+        "MiniMaxH3Pipeline.decode": 2.5120075110025937,
+        "queue_wait_ms": 0.2808599965646863,
+        "stage_0_gen_ms": 25658.533096313477
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 19.782499,
+      "sha256": "736ff709afb0bf1ee1b5593ad76f8b064ce984508039866f0a30b21484b3513a",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7570568380033365,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2562250290066004,
+        "MiniMaxH3Pipeline.diffuse": 12.176950813001895,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.7000361450045602,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4674789180062362,
+        "MiniMaxH3Pipeline.decode": 4.21490660100244,
+        "queue_wait_ms": 0.35106999712297693,
+        "stage_0_gen_ms": 19414.406776428223
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 16.650304,
+      "sha256": "736ff709afb0bf1ee1b5593ad76f8b064ce984508039866f0a30b21484b3513a",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2759177150001051,
+        "MiniMaxH3Pipeline._encode_local_media": 0.1530228849951527,
+        "MiniMaxH3Pipeline.diffuse": 11.257951823004987,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6643678460022784,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4611212929958128,
+        "MiniMaxH3Pipeline.decode": 4.171336726998561,
+        "queue_wait_ms": 0.31226999999489635,
+        "stage_0_gen_ms": 16317.898035049438
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 16.790989,
+      "sha256": "736ff709afb0bf1ee1b5593ad76f8b064ce984508039866f0a30b21484b3513a",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.27378257300006226,
+        "MiniMaxH3Pipeline._encode_local_media": 0.1520654839987401,
+        "MiniMaxH3Pipeline.diffuse": 11.276949569000863,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6833481510038837,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.461715313998866,
+        "MiniMaxH3Pipeline.decode": 4.195671655994374,
+        "queue_wait_ms": 25.786391001020093,
+        "stage_0_gen_ms": 16431.188583374023
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 16.593137,
+      "sha256": "736ff709afb0bf1ee1b5593ad76f8b064ce984508039866f0a30b21484b3513a",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2726272930012783,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15051327299443074,
+        "MiniMaxH3Pipeline.diffuse": 11.1873393660062,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6929023590055294,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4618312739985413,
+        "MiniMaxH3Pipeline.decode": 4.200116909996723,
+        "queue_wait_ms": 0.3292600013082847,
+        "stage_0_gen_ms": 16255.101442337036
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 19.47794,
+      "sha256": "0ee5e8d74341f3c020e81db0256889fefe99ff65c63bd7cdf8569689515c4d2c",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7871987030011951,
+        "MiniMaxH3Pipeline._encode_local_media": 0.23706427399883978,
+        "MiniMaxH3Pipeline.diffuse": 11.835363683996547,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.690969777002465,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4717214920019615,
+        "MiniMaxH3Pipeline.decode": 4.215745692003111,
+        "queue_wait_ms": 0.37652000173693523,
+        "stage_0_gen_ms": 19104.80570793152
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 16.290328,
+      "sha256": "0ee5e8d74341f3c020e81db0256889fefe99ff65c63bd7cdf8569689515c4d2c",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2765051259993925,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15583044700179016,
+        "MiniMaxH3Pipeline.diffuse": 10.86757892499736,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6598061219992815,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4610224629941513,
+        "MiniMaxH3Pipeline.decode": 4.171088576003967,
+        "queue_wait_ms": 0.5176510021556169,
+        "stage_0_gen_ms": 15942.052602767944
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 16.411393,
+      "sha256": "0ee5e8d74341f3c020e81db0256889fefe99ff65c63bd7cdf8569689515c4d2c",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.273478013004933,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15603659799671732,
+        "MiniMaxH3Pipeline.diffuse": 10.996114559005946,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.664429796001059,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.460743862997333,
+        "MiniMaxH3Pipeline.decode": 4.175617458997294,
+        "queue_wait_ms": 0.271701006568037,
+        "stage_0_gen_ms": 16058.895111083984
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 16.373116,
+      "sha256": "0ee5e8d74341f3c020e81db0256889fefe99ff65c63bd7cdf8569689515c4d2c",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2729301930012298,
+        "MiniMaxH3Pipeline._encode_local_media": 0.1538859060019604,
+        "MiniMaxH3Pipeline.diffuse": 10.98448747999646,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.652362606000679,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4599708120003925,
+        "MiniMaxH3Pipeline.decode": 4.163950479996856,
+        "queue_wait_ms": 0.8866909993230365,
+        "stage_0_gen_ms": 16031.248569488525
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 22.363631,
+      "sha256": "2c9bd6394afecea2b4f14b63dc541125a5ed006b158abd65cdc38feed3a581f9",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7580114489974221,
+        "MiniMaxH3Pipeline._encode_local_media": 0.23943509600212565,
+        "MiniMaxH3Pipeline.diffuse": 14.67019492899999,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.7586883030016907,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4656034669969813,
+        "MiniMaxH3Pipeline.decode": 4.2712119380012155,
+        "queue_wait_ms": 0.3707100040628575,
+        "stage_0_gen_ms": 21964.923620224
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 18.66482,
+      "sha256": "2c9bd6394afecea2b4f14b63dc541125a5ed006b158abd65cdc38feed3a581f9",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2755336750051356,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15199397400283488,
+        "MiniMaxH3Pipeline.diffuse": 13.214406061000773,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.7109131339966552,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4598381820032955,
+        "MiniMaxH3Pipeline.decode": 4.220513086998835,
+        "queue_wait_ms": 0.2921699997386895,
+        "stage_0_gen_ms": 18313.15016746521
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 18.436036,
+      "sha256": "2c9bd6394afecea2b4f14b63dc541125a5ed006b158abd65cdc38feed3a581f9",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2752996540002641,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15209619399684016,
+        "MiniMaxH3Pipeline.diffuse": 13.041248208995967,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6529408160058665,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4598272520015598,
+        "MiniMaxH3Pipeline.decode": 4.158716556004947,
+        "queue_wait_ms": 0.2541110006859526,
+        "stage_0_gen_ms": 18076.054573059082
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 18.627391,
+      "sha256": "2c9bd6394afecea2b4f14b63dc541125a5ed006b158abd65cdc38feed3a581f9",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.27622918599809054,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15257597400341183,
+        "MiniMaxH3Pipeline.diffuse": 13.192239162002807,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6788294070065604,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4599179919969174,
+        "MiniMaxH3Pipeline.decode": 4.188591689999157,
+        "queue_wait_ms": 0.276979997579474,
+        "stage_0_gen_ms": 18261.556386947632
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 18.412496,
+      "sha256": "2c02720fe5f5f0b6087387ed376e122f8400db7e063ac6f54971153d11dd0bda",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.28608031300245784,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15964199000154622,
+        "MiniMaxH3Pipeline.diffuse": 12.7841727490013,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6499008940008935,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4627410940011032,
+        "MiniMaxH3Pipeline.decode": 4.168442483001854,
+        "queue_wait_ms": 0.29748099768767133,
+        "stage_0_gen_ms": 18019.26064491272
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 18.169252,
+      "sha256": "2c02720fe5f5f0b6087387ed376e122f8400db7e063ac6f54971153d11dd0bda",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.27373650400113547,
+        "MiniMaxH3Pipeline._encode_local_media": 0.1566991279978538,
+        "MiniMaxH3Pipeline.diffuse": 12.728328194003552,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6656788770051207,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4639881260009133,
+        "MiniMaxH3Pipeline.decode": 4.181865674996516,
+        "queue_wait_ms": 0.320379993354436,
+        "stage_0_gen_ms": 17775.624752044678
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 18.296448,
+      "sha256": "2c02720fe5f5f0b6087387ed376e122f8400db7e063ac6f54971153d11dd0bda",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.27085616099793697,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15512904699426144,
+        "MiniMaxH3Pipeline.diffuse": 12.825072553001519,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6958142109942855,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4616858230001526,
+        "MiniMaxH3Pipeline.decode": 4.207338875996356,
+        "queue_wait_ms": 0.26298000011593103,
+        "stage_0_gen_ms": 17891.1395072937
+      }
+    },
+    {
+      "case": "case02",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 18.187716,
+      "sha256": "2c02720fe5f5f0b6087387ed376e122f8400db7e063ac6f54971153d11dd0bda",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.2698911209954531,
+        "MiniMaxH3Pipeline._encode_local_media": 0.15396250600315398,
+        "MiniMaxH3Pipeline.diffuse": 12.752173753993702,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 2.6673552680003922,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.4620220840006368,
+        "MiniMaxH3Pipeline.decode": 4.179321563002304,
+        "queue_wait_ms": 0.36680100311059505,
+        "stage_0_gen_ms": 17789.820432662964
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 27.578963,
+      "sha256": "815d634badbb07883cd5052487ed1be4ff363c03b82c45997db85de7bc0f4b30",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5237431279965676,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2650003660019138,
+        "MiniMaxH3Pipeline.diffuse": 19.489098843994725,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.76350707399979,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4018302309996216,
+        "MiniMaxH3Pipeline.decode": 6.233758010996098,
+        "queue_wait_ms": 0.3266710045863874,
+        "stage_0_gen_ms": 27097.907781600952
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 27.587857,
+      "sha256": "815d634badbb07883cd5052487ed1be4ff363c03b82c45997db85de7bc0f4b30",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5086503560014535,
+        "MiniMaxH3Pipeline._encode_local_media": 0.26004252200073097,
+        "MiniMaxH3Pipeline.diffuse": 19.514481534999504,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.754096655000467,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.399717710002733,
+        "MiniMaxH3Pipeline.decode": 6.222012991005613,
+        "queue_wait_ms": 0.33895000524353236,
+        "stage_0_gen_ms": 27093.108654022217
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 27.596154,
+      "sha256": "815d634badbb07883cd5052487ed1be4ff363c03b82c45997db85de7bc0f4b30",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5116360669999267,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2631182739933138,
+        "MiniMaxH3Pipeline.diffuse": 19.44623356899683,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.8340761810031836,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.400755100999959,
+        "MiniMaxH3Pipeline.decode": 6.30812405100005,
+        "queue_wait_ms": 0.43552999704843387,
+        "stage_0_gen_ms": 27110.09168624878
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 27.602635,
+      "sha256": "815d634badbb07883cd5052487ed1be4ff363c03b82c45997db85de7bc0f4b30",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5104994270004681,
+        "MiniMaxH3Pipeline._encode_local_media": 0.26357864499732386,
+        "MiniMaxH3Pipeline.diffuse": 19.492351036999025,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7740445119998185,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4003092999992077,
+        "MiniMaxH3Pipeline.decode": 6.2423061480003526,
+        "queue_wait_ms": 0.3004000027431175,
+        "stage_0_gen_ms": 27100.780725479126
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 26.89121,
+      "sha256": "583ff8ed8bdbd6fd64ad1a164a9b2c3da7c2b36109cf07c4f59eee088fc8a907",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.526585530002194,
+        "MiniMaxH3Pipeline._encode_local_media": 0.27282309299334884,
+        "MiniMaxH3Pipeline.diffuse": 18.741672573996766,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7801269570045406,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4025798919974477,
+        "MiniMaxH3Pipeline.decode": 6.259354451998661,
+        "queue_wait_ms": 0.33989000075962394,
+        "stage_0_gen_ms": 26398.561716079712
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 26.856434,
+      "sha256": "583ff8ed8bdbd6fd64ad1a164a9b2c3da7c2b36109cf07c4f59eee088fc8a907",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5134246090019587,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2628763140019146,
+        "MiniMaxH3Pipeline.diffuse": 18.760933379999187,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7645786450011656,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4003668799996376,
+        "MiniMaxH3Pipeline.decode": 6.24341087799985,
+        "queue_wait_ms": 0.36394000198924914,
+        "stage_0_gen_ms": 26372.992753982544
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 26.903434,
+      "sha256": "583ff8ed8bdbd6fd64ad1a164a9b2c3da7c2b36109cf07c4f59eee088fc8a907",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5137587600038387,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2649589560023742,
+        "MiniMaxH3Pipeline.diffuse": 18.770541476995277,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.8113353330045356,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.400897259998601,
+        "MiniMaxH3Pipeline.decode": 6.290683577004529,
+        "queue_wait_ms": 0.40920000174082816,
+        "stage_0_gen_ms": 26415.523767471313
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 26.8121,
+      "sha256": "583ff8ed8bdbd6fd64ad1a164a9b2c3da7c2b36109cf07c4f59eee088fc8a907",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5110960279998835,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2619344140039175,
+        "MiniMaxH3Pipeline.diffuse": 18.712567770999158,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.765595905002556,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4005040199990617,
+        "MiniMaxH3Pipeline.decode": 6.243402237996634,
+        "queue_wait_ms": 0.39765100518707186,
+        "stage_0_gen_ms": 26309.678077697754
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 30.330969,
+      "sha256": "692a3f810f7992ab80fdda2a459800c36f824c6114812ebf126e04161ce8b426",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5299097930037533,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2720379319944186,
+        "MiniMaxH3Pipeline.diffuse": 22.156230202999723,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.798337852000259,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4001296799979173,
+        "MiniMaxH3Pipeline.decode": 6.2695412789980765,
+        "queue_wait_ms": 0.2782199953799136,
+        "stage_0_gen_ms": 29824.7811794281
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 30.39425,
+      "sha256": "692a3f810f7992ab80fdda2a459800c36f824c6114812ebf126e04161ce8b426",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5243733589959447,
+        "MiniMaxH3Pipeline._encode_local_media": 0.27714685600221856,
+        "MiniMaxH3Pipeline.diffuse": 22.260062827001093,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7551612259994727,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.399757970000792,
+        "MiniMaxH3Pipeline.decode": 6.223315531999106,
+        "queue_wait_ms": 0.2983509984915145,
+        "stage_0_gen_ms": 29875.873804092407
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 30.353646,
+      "sha256": "692a3f810f7992ab80fdda2a459800c36f824c6114812ebf126e04161ce8b426",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5156115909994696,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2797332190020825,
+        "MiniMaxH3Pipeline.diffuse": 22.17801099999633,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7945047190005425,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.399992820006446,
+        "MiniMaxH3Pipeline.decode": 6.261206463001145,
+        "queue_wait_ms": 0.2703609934542328,
+        "stage_0_gen_ms": 29832.99732208252
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 30.454627,
+      "sha256": "692a3f810f7992ab80fdda2a459800c36f824c6114812ebf126e04161ce8b426",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.5421992920018965,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2870846040023025,
+        "MiniMaxH3Pipeline.diffuse": 22.21783244299877,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.827017125004204,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.3993687789989053,
+        "MiniMaxH3Pipeline.decode": 6.293693478997739,
+        "queue_wait_ms": 0.28208099683979526,
+        "stage_0_gen_ms": 29936.11979484558
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 29.409673,
+      "sha256": "cfafd32e7f9fc12c405340ac41c7ec03ad3110f2d9cb8a2996519523669d54ba",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.4943254440004239,
+        "MiniMaxH3Pipeline._encode_local_media": 0.2720778720031376,
+        "MiniMaxH3Pipeline.diffuse": 21.239486503996886,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7642710840009386,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4015057609940413,
+        "MiniMaxH3Pipeline.decode": 6.24796272200183,
+        "queue_wait_ms": 0.3731699980562553,
+        "stage_0_gen_ms": 28820.32299041748
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 29.497199,
+      "sha256": "cfafd32e7f9fc12c405340ac41c7ec03ad3110f2d9cb8a2996519523669d54ba",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.48408645499876,
+        "MiniMaxH3Pipeline._encode_local_media": 0.26510057599807624,
+        "MiniMaxH3Pipeline.diffuse": 21.38764044400159,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.7814382780052256,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.4006402200029697,
+        "MiniMaxH3Pipeline.decode": 6.259189901000354,
+        "queue_wait_ms": 0.32575999648543075,
+        "stage_0_gen_ms": 28966.328620910645
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 29.426471,
+      "sha256": "cfafd32e7f9fc12c405340ac41c7ec03ad3110f2d9cb8a2996519523669d54ba",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.4825649539998267,
+        "MiniMaxH3Pipeline._encode_local_media": 0.26421046599716647,
+        "MiniMaxH3Pipeline.diffuse": 21.279089865995047,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.777403684995079,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.400972600997193,
+        "MiniMaxH3Pipeline.decode": 6.25431702700007,
+        "queue_wait_ms": 0.2931609997176565,
+        "stage_0_gen_ms": 28843.411684036255
+      }
+    },
+    {
+      "case": "case03",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 29.562248,
+      "sha256": "cfafd32e7f9fc12c405340ac41c7ec03ad3110f2d9cb8a2996519523669d54ba",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.4850193960010074,
+        "MiniMaxH3Pipeline._encode_local_media": 0.262754164999933,
+        "MiniMaxH3Pipeline.diffuse": 21.40691017000063,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.787998173000233,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.400539510003,
+        "MiniMaxH3Pipeline.decode": 6.265176936001808,
+        "queue_wait_ms": 0.3133810023427941,
+        "stage_0_gen_ms": 28977.410793304443
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 36.8179,
+      "sha256": "d6c6f54c3880571bcd56e7d7a25c538a31f877b906431bd1fb096e95bb529ef8",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8436319879983785,
+        "MiniMaxH3Pipeline._encode_local_media": 0.38887230699765496,
+        "MiniMaxH3Pipeline.diffuse": 26.940157188997546,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.430359138001222,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8438133430026937,
+        "MiniMaxH3Pipeline.decode": 7.357419198000571,
+        "queue_wait_ms": 0.35388099786359817,
+        "stage_0_gen_ms": 36227.593183517456
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 36.754757,
+      "sha256": "d6c6f54c3880571bcd56e7d7a25c538a31f877b906431bd1fb096e95bb529ef8",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8292943370033754,
+        "MiniMaxH3Pipeline._encode_local_media": 0.37759450799785554,
+        "MiniMaxH3Pipeline.diffuse": 26.8976122439999,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.456765678994998,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.843060011997295,
+        "MiniMaxH3Pipeline.decode": 7.381536688000779,
+        "queue_wait_ms": 0.3484600019874051,
+        "stage_0_gen_ms": 36173.59495162964
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 37.00396,
+      "sha256": "d6c6f54c3880571bcd56e7d7a25c538a31f877b906431bd1fb096e95bb529ef8",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8385538750007981,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3846092140011024,
+        "MiniMaxH3Pipeline.diffuse": 27.128792242998315,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.471759341999132,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8427011809981195,
+        "MiniMaxH3Pipeline.decode": 7.400477183997282,
+        "queue_wait_ms": 0.35650000063469633,
+        "stage_0_gen_ms": 36426.07235908508
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 36.963986,
+      "sha256": "d6c6f54c3880571bcd56e7d7a25c538a31f877b906431bd1fb096e95bb529ef8",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8454266700064181,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3830502820055699,
+        "MiniMaxH3Pipeline.diffuse": 27.093147813997348,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.471107770994422,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.843004711001413,
+        "MiniMaxH3Pipeline.decode": 7.401819124999747,
+        "queue_wait_ms": 0.33447000168962404,
+        "stage_0_gen_ms": 36397.780895233154
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 35.462963,
+      "sha256": "6dc911e79dba2eacb567086d4f8ab11f073bec86874dca0fdcecac56aa3105a1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8441894089992275,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3923610110068694,
+        "MiniMaxH3Pipeline.diffuse": 25.634566773005645,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.43008712700248,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8441873930059955,
+        "MiniMaxH3Pipeline.decode": 7.376470983006584,
+        "queue_wait_ms": 0.2695009970921092,
+        "stage_0_gen_ms": 34907.57131576538
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 35.432877,
+      "sha256": "6dc911e79dba2eacb567086d4f8ab11f073bec86874dca0fdcecac56aa3105a1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8398152959998697,
+        "MiniMaxH3Pipeline._encode_local_media": 0.38483472400548635,
+        "MiniMaxH3Pipeline.diffuse": 25.56941907900182,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.4564570389993605,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8426119119976647,
+        "MiniMaxH3Pipeline.decode": 7.3996701129944995,
+        "queue_wait_ms": 0.46475999988615513,
+        "stage_0_gen_ms": 34858.15715789795
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 35.428294,
+      "sha256": "6dc911e79dba2eacb567086d4f8ab11f073bec86874dca0fdcecac56aa3105a1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8431788480011164,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3845459040021524,
+        "MiniMaxH3Pipeline.diffuse": 25.552370746001543,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.457071329001337,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.843507732002763,
+        "MiniMaxH3Pipeline.decode": 7.400748033003765,
+        "queue_wait_ms": 0.3031999949598685,
+        "stage_0_gen_ms": 34840.776205062866
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 35.4277,
+      "sha256": "6dc911e79dba2eacb567086d4f8ab11f073bec86874dca0fdcecac56aa3105a1",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8381440439989092,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3880160769986105,
+        "MiniMaxH3Pipeline.diffuse": 25.54405063900049,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.449693753995234,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8433527919987682,
+        "MiniMaxH3Pipeline.decode": 7.394012548000319,
+        "queue_wait_ms": 0.3440410000621341,
+        "stage_0_gen_ms": 34850.99816322327
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 40.060842,
+      "sha256": "d0ed5c2c77c15d64a5ce3fb0331d3d6c9d456f095762a56f8c85b0a1ee35eacb",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8697366800042801,
+        "MiniMaxH3Pipeline._encode_local_media": 0.4089186340061133,
+        "MiniMaxH3Pipeline.diffuse": 30.125114599999506,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.445855860998563,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.843910181996762,
+        "MiniMaxH3Pipeline.decode": 7.3703096190001816,
+        "queue_wait_ms": 0.25079099577851593,
+        "stage_0_gen_ms": 39457.36861228943
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 39.971458,
+      "sha256": "d0ed5c2c77c15d64a5ce3fb0331d3d6c9d456f095762a56f8c85b0a1ee35eacb",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8599915519953356,
+        "MiniMaxH3Pipeline._encode_local_media": 0.4003246469947044,
+        "MiniMaxH3Pipeline.diffuse": 30.076041699998314,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.452247225999599,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8450538830002188,
+        "MiniMaxH3Pipeline.decode": 7.37938409599883,
+        "queue_wait_ms": 0.3628599952207878,
+        "stage_0_gen_ms": 39393.01562309265
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 40.010846,
+      "sha256": "d0ed5c2c77c15d64a5ce3fb0331d3d6c9d456f095762a56f8c85b0a1ee35eacb",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8591492910054512,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3945493819992407,
+        "MiniMaxH3Pipeline.diffuse": 30.109573927002202,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.451356174999091,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8464511340062018,
+        "MiniMaxH3Pipeline.decode": 7.378526565997163,
+        "queue_wait_ms": 0.2553209997131489,
+        "stage_0_gen_ms": 39412.8258228302
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 40.012178,
+      "sha256": "d0ed5c2c77c15d64a5ce3fb0331d3d6c9d456f095762a56f8c85b0a1ee35eacb",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.8590470920025837,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3932242610026151,
+        "MiniMaxH3Pipeline.diffuse": 30.13094471400109,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.443118557996058,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8440342520043487,
+        "MiniMaxH3Pipeline.decode": 7.368988346999686,
+        "queue_wait_ms": 0.3276999996160157,
+        "stage_0_gen_ms": 39424.60227012634
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 38.50609,
+      "sha256": "2aceda0c3beb6bda54aeb62d47685be6d9be99227b09edc03d46c32d8bf71fb5",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7959035899984883,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3895385880023241,
+        "MiniMaxH3Pipeline.diffuse": 28.587957224001002,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.440430435999588,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.844371992003289,
+        "MiniMaxH3Pipeline.decode": 7.383412598996074,
+        "queue_wait_ms": 0.2815509942593053,
+        "stage_0_gen_ms": 37803.29513549805
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 38.577943,
+      "sha256": "2aceda0c3beb6bda54aeb62d47685be6d9be99227b09edc03d46c32d8bf71fb5",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7803252969970345,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3797405599980266,
+        "MiniMaxH3Pipeline.diffuse": 28.648701083999185,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.480432049000228,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.843516881999676,
+        "MiniMaxH3Pipeline.decode": 7.418573438000749,
+        "queue_wait_ms": 0.2696209994610399,
+        "stage_0_gen_ms": 37872.62845039368
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 38.618121,
+      "sha256": "2aceda0c3beb6bda54aeb62d47685be6d9be99227b09edc03d46c32d8bf71fb5",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7803901370061794,
+        "MiniMaxH3Pipeline._encode_local_media": 0.37732205799693475,
+        "MiniMaxH3Pipeline.diffuse": 28.666032157998416,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.4276352360029705,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.8419552509949426,
+        "MiniMaxH3Pipeline.decode": 7.36615779499698,
+        "queue_wait_ms": 0.3048799990210682,
+        "stage_0_gen_ms": 37849.28584098816
+      }
+    },
+    {
+      "case": "case04",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 38.484709,
+      "sha256": "2aceda0c3beb6bda54aeb62d47685be6d9be99227b09edc03d46c32d8bf71fb5",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 0.7837736299989047,
+        "MiniMaxH3Pipeline._encode_local_media": 0.3794399299949873,
+        "MiniMaxH3Pipeline.diffuse": 28.611012493995077,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.43280121999851,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 2.841853271005675,
+        "MiniMaxH3Pipeline.decode": 7.372239730000729,
+        "queue_wait_ms": 0.38130000029923394,
+        "stage_0_gen_ms": 37817.20209121704
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 54.733607,
+      "sha256": "676e9c6a1fcd95c9f9213c45e9764ebd3f147e20acdc005a04e667dcf7acc267",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.758986883003672,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7455265879980288,
+        "MiniMaxH3Pipeline.diffuse": 41.01930685599655,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.903935694004758,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.139102613000432,
+        "MiniMaxH3Pipeline.decode": 8.14702146199852,
+        "queue_wait_ms": 0.28495999868027866,
+        "stage_0_gen_ms": 53959.68580245972
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 54.298641,
+      "sha256": "676e9c6a1fcd95c9f9213c45e9764ebd3f147e20acdc005a04e667dcf7acc267",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.7183545399966533,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7332291679995251,
+        "MiniMaxH3Pipeline.diffuse": 40.97623912099516,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.916413614999328,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1369051720030257,
+        "MiniMaxH3Pipeline.decode": 8.159371453002677,
+        "queue_wait_ms": 0.33823100238805637,
+        "stage_0_gen_ms": 53525.797843933105
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 54.387424,
+      "sha256": "676e9c6a1fcd95c9f9213c45e9764ebd3f147e20acdc005a04e667dcf7acc267",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6895643870011554,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7275211039959686,
+        "MiniMaxH3Pipeline.diffuse": 41.09559353799705,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.918231285999354,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.135389759998361,
+        "MiniMaxH3Pipeline.decode": 8.157044250998297,
+        "queue_wait_ms": 0.3303299963590689,
+        "stage_0_gen_ms": 53619.317293167114
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 54.28371,
+      "sha256": "676e9c6a1fcd95c9f9213c45e9764ebd3f147e20acdc005a04e667dcf7acc267",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.684311971999705,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7211492989954422,
+        "MiniMaxH3Pipeline.diffuse": 41.00542941399908,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.9022632429987425,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1386486230039736,
+        "MiniMaxH3Pipeline.decode": 8.139177097000356,
+        "queue_wait_ms": 0.3565399965737015,
+        "stage_0_gen_ms": 53501.270055770874
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 50.206313,
+      "sha256": "8e538c88d075df29aa5a48926a9de4268385883d3ae56a5d56df79001f21868f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.7503947660006816,
+        "MiniMaxH3Pipeline._encode_local_media": 0.736583852005424,
+        "MiniMaxH3Pipeline.diffuse": 36.47900397799822,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.897302939003566,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.138198173001001,
+        "MiniMaxH3Pipeline.decode": 8.170362192002358,
+        "queue_wait_ms": 0.25934999575838447,
+        "stage_0_gen_ms": 49427.5426864624
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 49.804579,
+      "sha256": "8e538c88d075df29aa5a48926a9de4268385883d3ae56a5d56df79001f21868f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.71648011799698,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7217068190002465,
+        "MiniMaxH3Pipeline.diffuse": 36.46289531500224,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.912796691001859,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.137680182000622,
+        "MiniMaxH3Pipeline.decode": 8.187245324996184,
+        "queue_wait_ms": 0.28315000236034393,
+        "stage_0_gen_ms": 49039.40224647522
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 49.733119,
+      "sha256": "8e538c88d075df29aa5a48926a9de4268385883d3ae56a5d56df79001f21868f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6872247739956947,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7160310140025103,
+        "MiniMaxH3Pipeline.diffuse": 36.450452655000845,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.8896394219991635,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.136869091002154,
+        "MiniMaxH3Pipeline.decode": 8.162602404998324,
+        "queue_wait_ms": 0.28885999927297235,
+        "stage_0_gen_ms": 48954.878091812134
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 49.797702,
+      "sha256": "8e538c88d075df29aa5a48926a9de4268385883d3ae56a5d56df79001f21868f",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6931881199998315,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7290613849982037,
+        "MiniMaxH3Pipeline.diffuse": 36.47729009699833,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.923478730001079,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.137309241996263,
+        "MiniMaxH3Pipeline.decode": 8.205325339993578,
+        "queue_wait_ms": 0.3826500033028424,
+        "stage_0_gen_ms": 49039.029598236084
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 58.357952,
+      "sha256": "80e5eecf71590500bfb09ea4ba03c24022acd5fcae93655ff1d39eb3471dea0e",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.7755360459996155,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7494745219955803,
+        "MiniMaxH3Pipeline.diffuse": 44.62338281900156,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.897816609998699,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1367383809993044,
+        "MiniMaxH3Pipeline.decode": 8.135060512999189,
+        "queue_wait_ms": 0.22603999968850985,
+        "stage_0_gen_ms": 57577.97360420227
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 58.014357,
+      "sha256": "80e5eecf71590500bfb09ea4ba03c24022acd5fcae93655ff1d39eb3471dea0e",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.709172782000678,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7403785650021746,
+        "MiniMaxH3Pipeline.diffuse": 44.60519261299487,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.967767657006334,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1360783010022715,
+        "MiniMaxH3Pipeline.decode": 8.209369053998671,
+        "queue_wait_ms": 0.25797000125749037,
+        "stage_0_gen_ms": 57210.05201339722
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 58.034483,
+      "sha256": "80e5eecf71590500bfb09ea4ba03c24022acd5fcae93655ff1d39eb3471dea0e",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.684757292998256,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7578209190032794,
+        "MiniMaxH3Pipeline.diffuse": 44.628985863004345,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.947691909997957,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.137110872004996,
+        "MiniMaxH3Pipeline.decode": 8.183504642001935,
+        "queue_wait_ms": 0.22854999406263232,
+        "stage_0_gen_ms": 57252.5098323822
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 58.128552,
+      "sha256": "80e5eecf71590500bfb09ea4ba03c24022acd5fcae93655ff1d39eb3471dea0e",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6858269139993354,
+        "MiniMaxH3Pipeline._encode_local_media": 0.7557995870010927,
+        "MiniMaxH3Pipeline.diffuse": 44.769606027999544,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.929961506000836,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1392836540035205,
+        "MiniMaxH3Pipeline.decode": 8.174030734997359,
+        "queue_wait_ms": 0.2854799968190491,
+        "stage_0_gen_ms": 57335.9739780426
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 53.672684,
+      "sha256": "4bc443b98301c8e567bed2d50c98f076b9a757fd0c00d0da50fae5c153010114",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6668183770016185,
+        "MiniMaxH3Pipeline._encode_local_media": 0.6997617509987322,
+        "MiniMaxH3Pipeline.diffuse": 39.96078306099662,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.941327505002846,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.136936112001422,
+        "MiniMaxH3Pipeline.decode": 8.207924331996765,
+        "queue_wait_ms": 0.27306000265525654,
+        "stage_0_gen_ms": 52771.55685424805
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 53.1685,
+      "sha256": "4bc443b98301c8e567bed2d50c98f076b9a757fd0c00d0da50fae5c153010114",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6481228429984185,
+        "MiniMaxH3Pipeline._encode_local_media": 0.6839415279973764,
+        "MiniMaxH3Pipeline.diffuse": 39.90160508300323,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.901234552002279,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1375547220013686,
+        "MiniMaxH3Pipeline.decode": 8.169175451002957,
+        "queue_wait_ms": 0.26676100242184475,
+        "stage_0_gen_ms": 52273.165464401245
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 53.280051,
+      "sha256": "4bc443b98301c8e567bed2d50c98f076b9a757fd0c00d0da50fae5c153010114",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.6619109340026625,
+        "MiniMaxH3Pipeline._encode_local_media": 0.6925167660010629,
+        "MiniMaxH3Pipeline.diffuse": 39.97996702600358,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.915123643993866,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1378213729985873,
+        "MiniMaxH3Pipeline.decode": 8.192733199997747,
+        "queue_wait_ms": 0.2967199980048463,
+        "stage_0_gen_ms": 52412.7984046936
+      }
+    },
+    {
+      "case": "case05",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 53.213185,
+      "sha256": "4bc443b98301c8e567bed2d50c98f076b9a757fd0c00d0da50fae5c153010114",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 2.652483335994475,
+        "MiniMaxH3Pipeline._encode_local_media": 0.6891773020033725,
+        "MiniMaxH3Pipeline.diffuse": 39.8806373059997,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 4.955399036996823,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 3.1376595420006197,
+        "MiniMaxH3Pipeline.decode": 8.223963385004026,
+        "queue_wait_ms": 0.2558710039011203,
+        "stage_0_gen_ms": 52320.51348686218
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 51.325885,
+      "sha256": "062030474f73e3f26b6fc094505ce3e5dc633cef935705506bb23aaee75c6fea",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4444978200044716,
+        "MiniMaxH3Pipeline._encode_local_media": 7.05679982300353,
+        "MiniMaxH3Pipeline.diffuse": 34.54216371700022,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.071540577999258,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9570538479965762,
+        "MiniMaxH3Pipeline.decode": 5.1285128079980495,
+        "queue_wait_ms": 0.2238910019514151,
+        "stage_0_gen_ms": 50906.98170661926
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 51.421387,
+      "sha256": "062030474f73e3f26b6fc094505ce3e5dc633cef935705506bb23aaee75c6fea",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.459191601999919,
+        "MiniMaxH3Pipeline._encode_local_media": 7.065329018994817,
+        "MiniMaxH3Pipeline.diffuse": 34.65449697800068,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.1025203240060364,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9569684279995272,
+        "MiniMaxH3Pipeline.decode": 5.153731268997944,
+        "queue_wait_ms": 0.24074000248219818,
+        "stage_0_gen_ms": 51011.08741760254
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 51.374619,
+      "sha256": "062030474f73e3f26b6fc094505ce3e5dc633cef935705506bb23aaee75c6fea",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.446215220996237,
+        "MiniMaxH3Pipeline._encode_local_media": 7.06561086900183,
+        "MiniMaxH3Pipeline.diffuse": 34.5325344390003,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.1223510099953273,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9560180169937667,
+        "MiniMaxH3Pipeline.decode": 5.186328824995144,
+        "queue_wait_ms": 0.2428599982522428,
+        "stage_0_gen_ms": 50973.3464717865
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "MXFP8 + mix baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 51.363598,
+      "sha256": "062030474f73e3f26b6fc094505ce3e5dc633cef935705506bb23aaee75c6fea",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4442437990001054,
+        "MiniMaxH3Pipeline._encode_local_media": 7.064523968998401,
+        "MiniMaxH3Pipeline.diffuse": 34.52954303700244,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.0735971690010047,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9567791279987432,
+        "MiniMaxH3Pipeline.decode": 5.126140706001024,
+        "queue_wait_ms": 0.25493000430287793,
+        "stage_0_gen_ms": 50957.78489112854
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "RefReuse without LoRA",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 42.87451,
+      "sha256": "413ac6d6273d6f269511e85ce927414c483ae4d12ea1208e74b778cab4d26bc3",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.441540577005071,
+        "MiniMaxH3Pipeline._encode_local_media": 7.073203366002417,
+        "MiniMaxH3Pipeline.diffuse": 25.841342081999755,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.1078399580001133,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9569426279995241,
+        "MiniMaxH3Pipeline.decode": 5.325908708997304,
+        "queue_wait_ms": 0.3208800044376403,
+        "stage_0_gen_ms": 42462.47148513794
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 42.722236,
+      "sha256": "413ac6d6273d6f269511e85ce927414c483ae4d12ea1208e74b778cab4d26bc3",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.443533039004251,
+        "MiniMaxH3Pipeline._encode_local_media": 7.0887304290008615,
+        "MiniMaxH3Pipeline.diffuse": 25.72843132900016,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.074545641000441,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9600467109994497,
+        "MiniMaxH3Pipeline.decode": 5.301074338996841,
+        "queue_wait_ms": 0.6409210036508739,
+        "stage_0_gen_ms": 42318.78972053528
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 42.711938,
+      "sha256": "413ac6d6273d6f269511e85ce927414c483ae4d12ea1208e74b778cab4d26bc3",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4595863619979355,
+        "MiniMaxH3Pipeline._encode_local_media": 7.0544915909995325,
+        "MiniMaxH3Pipeline.diffuse": 25.704238928999985,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.0971608190011466,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9576531080019777,
+        "MiniMaxH3Pipeline.decode": 5.313295448002464,
+        "queue_wait_ms": 0.2824099938152358,
+        "stage_0_gen_ms": 42318.17603111267
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "RefReuse without LoRA",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 42.603836,
+      "sha256": "413ac6d6273d6f269511e85ce927414c483ae4d12ea1208e74b778cab4d26bc3",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4608220129957772,
+        "MiniMaxH3Pipeline._encode_local_media": 7.061465075996239,
+        "MiniMaxH3Pipeline.diffuse": 25.657439921000332,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.07842320400232,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.959498551004799,
+        "MiniMaxH3Pipeline.decode": 5.300113187993702,
+        "queue_wait_ms": 0.2917599995271303,
+        "stage_0_gen_ms": 42209.107875823975
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "LoRA baseline",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 55.449821,
+      "sha256": "0ed127b601e5e5b620485ca59a7559c1262a70bcf3def37741d8106887575624",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4750518139990163,
+        "MiniMaxH3Pipeline._encode_local_media": 7.1643852300039725,
+        "MiniMaxH3Pipeline.diffuse": 38.42792622900015,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.0961689579999074,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.957752508998965,
+        "MiniMaxH3Pipeline.decode": 5.152980637998553,
+        "queue_wait_ms": 0.22244999854592606,
+        "stage_0_gen_ms": 55025.1088142395
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "LoRA baseline",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 55.416239,
+      "sha256": "0ed127b601e5e5b620485ca59a7559c1262a70bcf3def37741d8106887575624",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.50524209899595,
+        "MiniMaxH3Pipeline._encode_local_media": 7.164380509995681,
+        "MiniMaxH3Pipeline.diffuse": 38.37818970900116,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.092933545995038,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.956108137004776,
+        "MiniMaxH3Pipeline.decode": 5.15480684999784,
+        "queue_wait_ms": 0.30061100551392883,
+        "stage_0_gen_ms": 54988.87896537781
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "LoRA baseline",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 55.252539,
+      "sha256": "0ed127b601e5e5b620485ca59a7559c1262a70bcf3def37741d8106887575624",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.4910277779999888,
+        "MiniMaxH3Pipeline._encode_local_media": 7.1155824399975245,
+        "MiniMaxH3Pipeline.diffuse": 38.31387971700315,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.073679639994225,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.956512627999473,
+        "MiniMaxH3Pipeline.decode": 5.12652325599629,
+        "queue_wait_ms": 0.2475299988873303,
+        "stage_0_gen_ms": 54834.53035354614
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "LoRA baseline",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 55.516748,
+      "sha256": "0ed127b601e5e5b620485ca59a7559c1262a70bcf3def37741d8106887575624",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.5011595160030993,
+        "MiniMaxH3Pipeline._encode_local_media": 7.177641631002189,
+        "MiniMaxH3Pipeline.diffuse": 38.40507888099819,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.103006634002668,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9569793979972019,
+        "MiniMaxH3Pipeline.decode": 5.156826100996113,
+        "queue_wait_ms": 0.2932700008386746,
+        "stage_0_gen_ms": 55103.70373725891
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "H3-RefReuse",
+      "sample": "warmup",
+      "http_code": 200,
+      "e2e_seconds": 45.197516,
+      "sha256": "24e0af04a4b2994f74ed93b34fe283af9587141f56ea7cb9cf33a2193ca1befd",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.3590859200048726,
+        "MiniMaxH3Pipeline._encode_local_media": 7.018858322000597,
+        "MiniMaxH3Pipeline.diffuse": 28.289228620000358,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.111540680998587,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.957592178005143,
+        "MiniMaxH3Pipeline.decode": 5.3424727719975635,
+        "queue_wait_ms": 0.27692000003298745,
+        "stage_0_gen_ms": 44708.491802215576
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "H3-RefReuse",
+      "sample": "measure-1",
+      "http_code": 200,
+      "e2e_seconds": 45.161609,
+      "sha256": "24e0af04a4b2994f74ed93b34fe283af9587141f56ea7cb9cf33a2193ca1befd",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.3554842070006998,
+        "MiniMaxH3Pipeline._encode_local_media": 7.075302467994334,
+        "MiniMaxH3Pipeline.diffuse": 28.201986949003185,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.09093158399628,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9575743489986053,
+        "MiniMaxH3Pipeline.decode": 5.3059713230031775,
+        "queue_wait_ms": 0.2704500002437271,
+        "stage_0_gen_ms": 44672.393560409546
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "H3-RefReuse",
+      "sample": "measure-2",
+      "http_code": 200,
+      "e2e_seconds": 45.204988,
+      "sha256": "24e0af04a4b2994f74ed93b34fe283af9587141f56ea7cb9cf33a2193ca1befd",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.3552776369979256,
+        "MiniMaxH3Pipeline._encode_local_media": 7.011687815996993,
+        "MiniMaxH3Pipeline.diffuse": 28.266281791999063,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.1328529180027544,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.957402929001546,
+        "MiniMaxH3Pipeline.decode": 5.345790774998022,
+        "queue_wait_ms": 0.2960900019388646,
+        "stage_0_gen_ms": 44695.1060295105
+      }
+    },
+    {
+      "case": "case06",
+      "variant": "H3-RefReuse",
+      "sample": "measure-3",
+      "http_code": 200,
+      "e2e_seconds": 45.139534,
+      "sha256": "24e0af04a4b2994f74ed93b34fe283af9587141f56ea7cb9cf33a2193ca1befd",
+      "stage_durations": {
+        "MiniMaxH3Pipeline.encode_prompt": 1.3590806189968134,
+        "MiniMaxH3Pipeline._encode_local_media": 7.083073453999532,
+        "MiniMaxH3Pipeline.diffuse": 28.23278851500072,
+        "MiniMaxH3Pipeline.video_vae.decode_latent": 3.0712095180060714,
+        "MiniMaxH3Pipeline.audio_vae.decode_latent": 1.9566440880007576,
+        "MiniMaxH3Pipeline.decode": 5.289144618996943,
+        "queue_wait_ms": 0.3006000042660162,
+        "stage_0_gen_ms": 44621.22058868408
+      }
+    }
+  ]
+}
