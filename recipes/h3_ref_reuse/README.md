@@ -1,69 +1,61 @@
 # H3-RefReuse 快速启动
 
-在 Ascend 950PR 上运行 MiniMax-H3 Ref2VA，默认启用八步 LoRA、NPU 参考 KV 复用和矩形 mix attention。
+MiniMax-H3 Ref2VA 的八步 LoRA、NPU 参考 KV 复用和矩形 mix attention 配置。
+使用已有的 Ascend 950PR 推理环境，依赖版本见 [环境说明](ENVIRONMENT.md)。
 
-## 环境准备
+## 安装
 
-- Linux、Docker 和 Ascend 容器运行时，8 张 Ascend 950PR。
-- 已安装匹配依赖的容器镜像：CANN 9.1.0、PyTorch 2.10.0、torch_npu 2.10.0.post4、
-  vLLM 0.32.0、vLLM-Ascend 和支持多 span / Eagle 接口的 MindIE-SD。
-  具体版本、安装和接口检查见 [环境说明](ENVIRONMENT.md)。
-- 完整的 [MiniMax-H3 模型](https://huggingface.co/MiniMaxAI/MiniMax-H3)。
-- [MiniMax-H3-Turbo-LoRA](https://huggingface.co/larryvrh/MiniMax-H3-Turbo-Lora) 中的
-  `minimax_h3_turbo_v4_step600_ema.safetensors`。
-- 一张自己的参考图，用于下面的请求示例。
-
-## 拉取代码
+按 vLLM-Omni 的常规源码安装方式使用本分支：
 
 ```bash
 git clone --branch h3-ref-reuse --single-branch https://github.com/march7th-26/vllm-omni.git
 cd vllm-omni
-python recipes/h3_ref_reuse/verify.py
+VLLM_OMNI_TARGET_DEVICE=npu pip install -e . --no-build-isolation
 ```
 
 ## 启动服务
 
-替换以下镜像名和绝对路径，将参考图保存为 `$INPUT_DIR/reference.jpg`。
-镜像需将 vLLM-Omni 以 editable 方式安装在 `/vllm-workspace/vllm-omni`；其他布局见环境说明。
+以下配置可直接写入现有的服务启动脚本。替换模型和 LoRA 路径：
 
 ```bash
-export IMAGE=your-compatible-ascend-image
-export MODEL_DIR=/absolute/path/MiniMax-H3
-export LORA_PATH=/absolute/path/minimax_h3_turbo_v4_step600_ema.safetensors
-export INPUT_DIR=/absolute/path/reference-media
-export DEVICES=0,1,2,3,4,5,6,7
-bash recipes/h3_ref_reuse/run_container.sh
+export MODEL=/path/to/MiniMax-H3
+export RESEARCH_LARRY_LORA_PATH=/path/to/minimax_h3_turbo_v4_step600_ema.safetensors
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+
+vllm serve "$MODEL" --omni --task-type ref2va \
+    --host 127.0.0.1 --port 9098 --trust-remote-code \
+    --num-gpus 8 --usp 8 --ring 1 --text-encoder-tp-size 8 \
+    --vae-parallel-mode tile --vae-use-tiling --vae-patch-parallel-size 8 \
+    --diffusion-quantization-config '{"transformer":{"method":"mxfp8"}}' \
+    --diffusion-attention-config '{"default":{"backend":"RAINFUSION_ATTN","block_sparse":{"sparsity":0.8,"precision":"mix","start_step":0,"end_step":0}}}' \
+    --kv-offload-config '{"mode":"on","kv_refresh_interval":8,"kv_host_quantization":"none","kv_storage":"npu"}'
 ```
 
-脚本会检查源码和运行依赖，并启动 `http://127.0.0.1:19136`。
+- `--kv-offload-config` 启用参考 KV 复用；`kv_storage=npu` 将 BF16 参考缓存保留在 NPU，
+  `kv_refresh_interval=8` 对应八步请求的首步计算、后七步复用。
+- `RESEARCH_LARRY_LORA_PATH` 指向
+  [v4-600 EMA LoRA](https://huggingface.co/larryvrh/MiniMax-H3-Turbo-Lora)。
+  该 adapter 由本分支加载，strength 为 1。
+- 删除 `--kv-offload-config` 即关闭参考复用；取消 LoRA 环境变量即可关闭 LoRA。
 
 ## 发送请求
 
-另开终端进入仓库根目录，设置相同的参考图目录，等待健康检查成功后发送请求：
+服务就绪后，使用标准同步视频接口。替换参考图路径和 prompt：
 
 ```bash
-export INPUT_DIR=/absolute/path/reference-media
-curl --fail http://127.0.0.1:19136/health
-
-cat > request.json <<'JSON'
-{
-  "prompt": "Use the object in <Picture 1> as the subject. A steady close-up in soft studio lighting, with a slow camera push-in and quiet room ambience.",
-  "seconds": 4,
-  "target": {"short_edge": 768, "aspect_ratio": "9:16"},
-  "num_inference_steps": 8,
-  "flow_shift": 12.0,
-  "audio_flow_shift": 3.0,
-  "seed": 42,
-  "conditions": [{"type": "image", "uri": "reference.jpg", "role": "reference"}]
-}
-JSON
-
-bash recipes/h3_ref_reuse/request.sh request.json output.mp4
+curl --fail-with-body http://127.0.0.1:9098/v1/videos/sync \
+    --form-string 'prompt=Use the object in <Picture 1> as the subject. A steady close-up in soft studio lighting, with a slow camera push-in and quiet room ambience.' \
+    --form-string 'short_edge=768' \
+    --form-string 'aspect_ratio=9:16' \
+    --form-string 'fps=24' \
+    --form-string 'num_inference_steps=8' \
+    --form-string 'flow_shift=12.0' \
+    --form-string 'audio_flow_shift=3.0' \
+    --form-string 'seed=42' \
+    --form-string 'extra_params={"task":"ref2va","duration":4}' \
+    --form 'input_references=@/path/to/reference.jpg;type=image/jpeg' \
+    --output output.mp4
 ```
 
-生成视频保存为 `output.mp4`，请求状态码和耗时保存为 `output.mp4.timing.txt`。
-修改 `prompt` 和 `conditions` 可替换描述与参考文件；`uri` 相对于 `INPUT_DIR`。
-默认输出为短边 768、24 fps，示例请求时长为 4 秒。
-
-如需关闭参考 KV 复用或 LoRA，停止服务后分别设置 `USE_REF_CACHE=0` 或 `USE_LORA=0`，
-再运行启动脚本。参考 KV 缓存会增加显存占用，输入规模需与设备容量匹配。
+生成视频保存为 `output.mp4`。多个参考文件按 prompt 中的编号顺序重复传入 `input_references`。
+参考复用属于近似推理，并增加显存占用；当前配置使用纯 Ulysses（ring=1）、DiT TP=1。

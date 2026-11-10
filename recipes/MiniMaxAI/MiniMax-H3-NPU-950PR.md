@@ -161,6 +161,20 @@ Append to switch the DiT to MXFP4 online quantization:
 
 and remove `--enable-distributed-layerwise-offload`.
 
+#### Reference-KV reuse (Ref2VA)
+
+Append to a Ref2VA `vllm serve` command to keep BF16 visual-reference K/V on
+the NPU and refresh it every eight denoising steps:
+
+```bash
+  --kv-offload-config '{"mode":"on","kv_refresh_interval":8,"kv_host_quantization":"none","kv_storage":"npu"}'
+```
+
+Omit the flag to disable reuse. This is approximate inference and uses extra
+HBM; keep pure Ulysses (`--ring 1`) and DiT TP=1. For the eight-step LoRA,
+MXFP8 and rectangular mix attention configuration on eight Ascend 950PR
+devices, see [H3-RefReuse](../h3_ref_reuse/README.md).
+
 ## Request examples
 
 Identical to the eight-card recipe; see
