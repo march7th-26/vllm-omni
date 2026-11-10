@@ -3,6 +3,17 @@
 MiniMax-H3 Ref2VA 的八步 LoRA、NPU 参考 KV 复用和矩形 mix attention 配置。
 使用已有的 Ascend 950PR 推理环境，依赖版本见 [环境说明](ENVIRONMENT.md)。
 
+## 优化点
+
+- **八步 LoRA**：加载 MiniMax-H3 Turbo v4-600 EMA adapter，以八步完成去噪。
+- **参考 KV 复用**：首步计算各层参考 K/V，以 BF16 保留在 NPU，后七步复用。
+- **跳过参考行计算**：复用步仅对非参考行执行投影和 MLP，attention 继续读取完整 K/V。
+- **矩形 mix attention**：短 Q、完整 K/V 直接计算，不补虚拟参考 Q；Q/K 使用 INT8，V 使用 FP8。
+- **序列并行对齐**：仅为通信补齐序列，进入 attention 前移除补齐行，计算后恢复。
+
+六例 LoRA 对照的 E2E 耗时减少 **2.36%–18.50%**，DiT 耗时减少 **3.34%–26.44%**。
+配置、逐例数据和测量范围见 [对比结果](RESULTS.md)。
+
 ## 安装
 
 按 vLLM-Omni 的常规源码安装方式使用本分支：
