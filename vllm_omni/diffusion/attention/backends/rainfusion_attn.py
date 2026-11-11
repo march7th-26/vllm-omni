@@ -7,7 +7,7 @@ import functools
 import inspect
 import math
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, cast
 
 import torch
 from vllm.logger import init_logger
@@ -18,6 +18,7 @@ from vllm_omni.diffusion.attention.backends.abstract import (
     AttentionImpl,
     AttentionMetadata,
     PackedPaddingMetadata,
+    VideoTokenLayout,
 )
 from vllm_omni.diffusion.attention.backends.flash_attn import FlashAttentionBackend
 from vllm_omni.diffusion.config import get_current_diffusion_config_or_none
@@ -106,6 +107,13 @@ class RainFusionConfig:
     end_step: int = 0
     precision: str = "bf16"
     skip_layers: frozenset[int] = frozenset()
+    ref_keep_ratio: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.ref_keep_ratio <= 1.0:
+            raise ValueError("ref_keep_ratio must be in (0, 1]")
+        if self.ref_keep_ratio < 1.0 and self.sparsity <= 0.0:
+            raise ValueError("ref_keep_ratio requires positive block sparsity")
 
     @classmethod
     def from_backend_kwargs(cls, backend_kwargs: dict | None) -> RainFusionConfig:
@@ -115,6 +123,7 @@ class RainFusionConfig:
             start_step=int(bk.get("start_step", 0)),
             end_step=int(bk.get("end_step", 0)),
             precision=str(bk.get("precision", "bf16")),
+            ref_keep_ratio=float(bk.get("ref_keep_ratio", 1.0)),
             skip_layers=frozenset(bk.get("skip_layers") or ()),
         )
 
@@ -274,6 +283,7 @@ class RainFusionAttentionImpl(AttentionImpl):
             int(attn_metadata.extra.get("minimax_h3_compact_reference_rows", 0)) if attn_metadata is not None else 0
         )
         if reference_rows:
+            assert attn_metadata is not None
             if self.qkv_layout != _INPUT_LAYOUT:
                 raise ValueError("RainFusion reference-KV reuse requires BSND layout")
             if key.shape != value.shape or key.shape[1] != query.shape[1] + reference_rows:
@@ -305,6 +315,22 @@ class RainFusionAttentionImpl(AttentionImpl):
                 )
                 plan = self._resolve_plan(sparse_metadata)
                 if plan is not None:
+                    from mindiesd.utils.get_platform import is_a5_device
+
+                    precision = attn_metadata.extra.get("kv_cache_dtype", self.rainfusion.precision)
+                    if (
+                        is_a5_device()
+                        and precision in ("float", "bf16", "mix")
+                        and (
+                            attn_metadata.extra.get("minimax_h3_resident_reference_kv", False)
+                            or self.rainfusion.ref_keep_ratio < 1.0
+                        )
+                    ):
+                        return self._forward_rectangular_npu(
+                            query, key, value, attn_metadata, plan, reference_rows, kv_layout
+                        )
+                    if self.rainfusion.ref_keep_ratio < 1.0:
+                        raise ValueError("rectangular reference block selection requires A5 BF16 or mix")
                     if self._can_use_hybrid(query, attn_metadata):
                         q_spans = tuple((span.start, tuple(span.latent_grid)) for span in layout.video_spans)
                         return self._forward_hybrid_npu(
@@ -335,6 +361,61 @@ class RainFusionAttentionImpl(AttentionImpl):
         if query.ndim != 4 or key.shape != query.shape or value.shape != query.shape or plan.used_len > query.shape[1]:
             raise ValueError("RainFusion video geometry must fit identical full-sequence BSND Q/K/V tensors.")
         return self._forward_sparse_npu(query, key, value, plan, attn_metadata)
+
+    def _forward_rectangular_npu(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        metadata: AttentionMetadata,
+        plan: RainFusionPlan,
+        reference_rows: int,
+        kv_layout: VideoTokenLayout,
+    ) -> torch.Tensor:
+        from vllm_omni.diffusion.attention.ops.rainfusion_rectangular import get_plan, run
+
+        if metadata.attn_mask is not None:
+            raise ValueError("rectangular RainFusion cannot replace an explicit attention mask")
+        if metadata.extra.get("kv_cache_dtype", "bf16") not in ("float", "bf16"):
+            raise ValueError("rectangular RainFusion requires unquantized cached K/V")
+        precision = metadata.extra.get("kv_cache_dtype", self.rainfusion.precision)
+        if precision == "float":
+            precision = "bf16"
+        used_q = int(metadata.extra["max_seqlen_q"])
+        used_kv = int(metadata.extra["max_seqlen_k"])
+        if plan.video_spans is None:
+            raise ValueError("rectangular RainFusion requires explicit video spans")
+        spans = tuple(
+            (cast(int, span["start"]), tuple(cast(list[int], span["latent_shape"]))) for span in plan.video_spans
+        )
+        rect_plan = get_plan(used_kv, reference_rows, spans, str(query.device))
+        selection = None
+        if self.rainfusion.ref_keep_ratio < 1.0:
+            from vllm_omni.diffusion.attention.ops.reference_block_selection import rectangular_plan
+
+            selection = rectangular_plan(
+                used_kv,
+                reference_rows,
+                spans,
+                str(query.device),
+                kv_layout.reference_image_spans,
+                kv_layout.reference_image_positions,
+                tuple(
+                    (span.start, span.start + span.length) for span in kv_layout.video_spans if span.role == "target"
+                ),
+            )
+        result = run(
+            query[:, :used_q],
+            key[:, :used_kv],
+            value[:, :used_kv],
+            rect_plan,
+            self.rainfusion.sparsity,
+            self.softmax_scale,
+            precision=precision,
+            ref_selection=selection,
+            ref_keep_ratio=self.rainfusion.ref_keep_ratio,
+        )
+        return torch.cat((result, query[:, used_q:]), dim=1) if query.shape[1] > used_q else result
 
     def _can_use_hybrid(self, query: torch.Tensor, metadata: AttentionMetadata | None) -> bool:
         if (
@@ -617,6 +698,16 @@ class RainFusionAttentionImpl(AttentionImpl):
             dense_context_seqlen,
             int(used_len),
         )
+        if self.rainfusion.ref_keep_ratio < 1.0:
+            from vllm_omni.diffusion.attention.ops.reference_block_selection import require_rbs
+
+            require_rbs()
+            spans[0]["_ref_keep_ratio"] = self.rainfusion.ref_keep_ratio
+            spans[0]["_ref_images"] = list(layout.reference_image_spans)
+            spans[0]["_ref_image_positions"] = list(layout.reference_image_positions)
+            spans[0]["_ref_targets"] = [
+                (span.start, span.start + span.length) for span in layout.video_spans if span.role == "target"
+            ]
         return RainFusionPlan(used_len=int(used_len), video_spans=spans)
 
     def _forward_sparse_npu(

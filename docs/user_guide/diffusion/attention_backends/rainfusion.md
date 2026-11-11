@@ -6,7 +6,9 @@ block, and attends to the highest-scoring blocks after arranging video tokens
 in `(t, h, w)` order.
 
 Only the video segment is sparse. Prefix rows such as text, visual conditions,
-and audio, plus first-frame blocks, remain dense. Unsupported calls—including
+and audio, plus first-frame blocks, remain dense by default. Reference-image
+selection below is an explicit exception for eligible image key blocks.
+Unsupported calls—including
 warmup steps, skipped layers, missing video geometry, and video segments below
 32 blocks—delegate to `FLASH_ATTN`, so compatible models can select RainFusion
 globally.
@@ -110,3 +112,37 @@ forwards remain floating-point BSA; unsupported BSA precision is an error rather
 than an automatic fallback. See
 [quantized attention](../../quantization/quantized_kvcache.md#wan22-t2v-quantized-attention-on-ascend)
 for the shared configuration structure and index semantics.
+
+## Reference-image block selection
+
+Set `rainfusion.ref_keep_ratio` alongside `block_sparse` in an attention spec:
+
+```json
+{
+  "default": {
+    "backend": "RAINFUSION_ATTN",
+    "block_sparse": {"sparsity": 0.8, "precision": "mix"},
+    "rainfusion": {"ref_keep_ratio": 0.1}
+  }
+}
+```
+
+The ratio must be in `(0, 1]`; default 1 preserves the original mask. Values
+below 1 require positive block sparsity and a MindIE-SD build containing
+[PR #842](https://gitcode.com/Ascend/MindIE-SD/pull/842/discuss). For each image,
+head and eligible target query block, selection keeps `max(1, ceil(N * ratio))`
+of that image's N candidate key blocks, independently of global top-k. Selected
+connections can be restored even when global top-k removed them. Mixed image
+blocks and protected rows/blocks retain their protection. Models must supply
+exact reference-image ownership; the backend does not infer it from a prefix.
+
+MiniMax-H3 supplies this metadata for full and compact reference-KV attention.
+On A5, its rectangular path supports BF16 and mix with unquantized cached KV.
+An explicit floating-point KV precision override also selects BF16 rectangular
+execution. Ring parallelism is unsupported. Reference selection changes the
+attention mask and does not reduce the reference KV allocation.
+
+Use the existing attention schedule to vary target sparsity across steps. Each
+profile must include its own RainFusion options. See the complete
+[reference optimization recipe](../../../../recipes/h3_ref_optimizations/README.md) for configuration,
+dependency revision and validation limits.

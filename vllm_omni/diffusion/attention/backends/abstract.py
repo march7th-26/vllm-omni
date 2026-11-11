@@ -218,6 +218,9 @@ class VideoTokenLayout:
     latent_grid: tuple[int, int, int] | None = None
     used_len: int | None = None
     video_spans: tuple[VideoTokenSpan, ...] = ()
+    # Original image ranges, or exact positions after cached-reference packing.
+    reference_image_spans: tuple[tuple[int, int], ...] = ()
+    reference_image_positions: tuple[tuple[int, ...], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

@@ -123,3 +123,20 @@ It does not reduce weight residency or cancel layerwise prefetch. A future
 integration that skips weight transfers must coordinate with `OffloadPlan`
 before prefetch and provide a safe miss path; moving weight storage currently
 causes conservative cache invalidation.
+
+## MiniMax-H3 approximate reference reuse
+
+The request-local reference-KV cache is distinct from exact conditioning
+projection reuse. `kv_storage=host` retains the existing layerwise prefetch;
+`kv_storage=npu` keeps unquantized reference KV on the device. Both refresh on
+the configured interval and compact reference query rows on reuse steps. The
+device pool and concatenation scratch are read and overwritten on the compute
+stream in layer order and released when the request closes.
+
+Reference reuse does not install an adapter or change weight loading. A request
+keeps its model and adapter fixed for the denoise run; its cache closes before
+another request can reuse storage. Refresh intervals are independent of the
+step count. Per-image reference selection is a separate RainFusion option and
+requires exact image ownership metadata. See the
+[reference optimization recipe](../../../../recipes/h3_ref_optimizations/README.md)
+for configuration, its independent MindIE-SD dependency and validation limits.
