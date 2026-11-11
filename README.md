@@ -1,7 +1,8 @@
-## H3-RefReuse-RBS：MiniMax-H3 参考复用与参考块筛选
+## LQ-Slim：MiniMax-H3 参考复用与分步稀疏
 
-在 Ascend A5 上组合八步 LoRA、参考 KV 复用、矩形 mix attention 和可调比例的参考块筛选。
-环境准备、服务启动和请求示例见 **[快速启动](recipes/h3_ref_reuse/README.md)**。
+在 Ascend A5 上组合八步 LoRA、参考 KV 复用、矩形 mix attention、参考块筛选和逐步稀疏率。
+环境准备、服务启动和请求示例见 **[LQ-Slim 快速启动](recipes/lq_slim/README.md)**；
+固定稀疏率配置见 [H3-RefReuse-RBS](recipes/h3_ref_reuse/README.md)。
 
 ---
 

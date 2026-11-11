@@ -175,10 +175,20 @@ class MiniMaxH3DenoiseBranch:
         prepare = getattr(model, "prepare_rope_table", None)
         if not callable(prepare):
             return
-        self.static_kwargs["rope_table"] = prepare(
-            self.static_kwargs["img_position_ids"],
-            seq_len=self.seq_len,
-        )
+        # RoPE preparation precedes the model's forward hooks. Activate the
+        # offload hook here too so frequencies and positions share a device.
+        registry = getattr(model, "_hook_registry", None)
+        hook = registry.get_hook("sequential_offload") if registry is not None else None
+        placement = nullcontext()
+        if hook is not None:
+            from vllm_omni.diffusion.offloader import sequential_offload_component
+
+            placement = sequential_offload_component(model)
+        with placement:
+            self.static_kwargs["rope_table"] = prepare(
+                self.static_kwargs["img_position_ids"],
+                seq_len=self.seq_len,
+            )
 
     def forward_kwargs(
         self,

@@ -16,6 +16,7 @@ globally.
 | Key | Valid values | Meaning |
 | --- | --- | --- |
 | `sparsity` | finite, `[0, 1]` | Nominal dropped-key-block fraction; default `0.8`; `0` disables sparsity |
+| `step_sparsities` | optional list of finite values in `(0, 1)` | Per-step override for sparse calls, indexed by zero-based denoise step; empty uses `sparsity` |
 | `start_step` | integer, `>= 0` | Number of early denoise steps kept dense |
 | `end_step` | integer, `>= 0` | Number of final denoise steps kept dense (tail fallback) |
 | `precision` | `"bf16"`, `"fp8"`, `"mix"` | Kernel precision mode; default `"bf16"`. Requires MindIE-SD with `sparse_attention(precision=...)` |
@@ -48,6 +49,14 @@ use layer exclusions only after a same-seed dense comparison identifies
 sensitive blocks.
 
 ## Requirements and compatibility
+
+An active `step_sparsities` schedule must have one entry per denoise step.
+Missing progress, out-of-range indices and mismatched step counts raise errors
+on sparse calls. Dense fallbacks do not need progress; `start_step`, `end_step`,
+layer exclusions and geometry checks still decide whether a call is sparse.
+Setting scalar `sparsity=0` keeps sparse attention disabled even with a schedule.
+The [LQ-Slim recipe](../../../../recipes/lq_slim/README.md) combines an eight-step
+schedule with RBS and reference KV reuse on Ascend A5.
 
 MiniMax-H3 Ref2VA can combine reference-KV reuse with reference block selection
 through `block_sparse.ref_keep_ratio`. Its range is `(0, 1]`, with default `1`

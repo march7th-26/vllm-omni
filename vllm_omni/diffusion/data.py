@@ -29,6 +29,7 @@ from vllm.model_executor.layers.quantization.base_config import (
 )
 from vllm.transformers_utils.repo_utils import get_model_path
 
+from vllm_omni.diffusion.attention.ops.step_sparsity import normalize_schedule
 from vllm_omni.diffusion.diffusion_kv.config import (
     DiffusionKVCacheMode,
     parse_diffusion_kv_cache_mode,
@@ -2122,6 +2123,8 @@ class BlockSparseSpec:
     ``ref_keep_ratio`` retains a fraction of each reference image's candidate
     blocks on the RBS-capable RainFusion path; 1.0 disables selection.
     ``precision`` selects the kernel precision mode (see ``RainFusionPrecision``).
+    ``step_sparsities`` optionally overrides ``sparsity`` at each zero-based
+    denoise step. An empty schedule keeps the scalar configuration.
     """
 
     sparsity: float = 0.8
@@ -2131,9 +2134,11 @@ class BlockSparseSpec:
     ref_keep_ratio: float = 1.0
     skip_layers: str | list[int] | None = None
     skip_layer_indices: set[int] | None = field(default=None, repr=False)
+    step_sparsities: list[float] | None = None
 
     def __post_init__(self) -> None:
         self.sparsity = _in_range(self.sparsity, "block_sparse.sparsity", 0.0, 1.0) or 0.0
+        self.step_sparsities = list(normalize_schedule(self.step_sparsities))
         self.ref_keep_ratio = float(self.ref_keep_ratio)
         if not 0.0 < self.ref_keep_ratio <= 1.0:
             raise ValueError("block_sparse.ref_keep_ratio must be in (0, 1].")
@@ -2246,6 +2251,8 @@ class AttentionSpec:
         if self.block_sparse is not None:
             bs = self.block_sparse
             kw["sparsity"] = bs.sparsity
+            if bs.step_sparsities:
+                kw["step_sparsities"] = list(bs.step_sparsities)
             kw["start_step"] = bs.start_step
             kw["end_step"] = bs.end_step
             kw["precision"] = bs.precision

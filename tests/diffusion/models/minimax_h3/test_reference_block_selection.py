@@ -8,11 +8,15 @@ checks do not execute or simulate the native attention kernels.
 
 import ast
 import dataclasses
+import functools
 import importlib.util
+import inspect
 import math
 import sys
 from bisect import bisect_left
+from collections import Counter
 from collections.abc import Mapping
+from contextlib import contextmanager, nullcontext
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
@@ -41,7 +45,17 @@ def definitions(name: str, relative: str, names: set[str], dependencies: dict) -
 
 
 @pytest.fixture
-def config():
+def schedule():
+    path = ROOT / "vllm_omni/diffusion/attention/ops/step_sparsity.py"
+    spec = importlib.util.spec_from_file_location("_step_sparsity", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
+def config(schedule):
     return definitions(
         "_rbs_attention_config",
         "vllm_omni/diffusion/data.py",
@@ -61,6 +75,7 @@ def config():
             "Enum": Enum,
             "Mapping": Mapping,
             "math": math,
+            "normalize_schedule": schedule.normalize_schedule,
             "BLOCK_SPARSE_BACKENDS": frozenset({"RAINFUSION_ATTN"}),
         },
     )
@@ -71,8 +86,8 @@ def geometry():
     layouts = definitions(
         "_rbs_layout",
         "vllm_omni/diffusion/attention/backends/abstract.py",
-        {"VideoTokenSpan", "VideoTokenLayout"},
-        {"dataclass": dataclasses.dataclass},
+        {"VideoTokenSpan", "VideoTokenLayout", "AttentionMetadata"},
+        {"dataclass": dataclasses.dataclass, "field": dataclasses.field},
     )
     return definitions(
         "_rbs_geometry",
@@ -81,6 +96,7 @@ def geometry():
         {
             "VideoTokenSpan": layouts.VideoTokenSpan,
             "VideoTokenLayout": layouts.VideoTokenLayout,
+            "AttentionMetadata": layouts.AttentionMetadata,
             "math": math,
             "bisect_left": bisect_left,
         },
@@ -88,15 +104,39 @@ def geometry():
 
 
 @pytest.fixture
-def backend():
+def progress():
+    @dataclasses.dataclass
+    class Progress:
+        denoise_step_idx: int | None = 0
+        total_denoise_steps: int | None = 8
+
+    return Progress()
+
+
+@pytest.fixture
+def backend(schedule, progress):
     return definitions(
         "_rbs_backend",
         "vllm_omni/diffusion/attention/backends/rainfusion_attn.py",
-        {"RainFusionConfig", "RainFusionPlan", "RainFusionAttentionImpl"},
+        {"RainFusionConfig", "RainFusionPlan", "RainFusionAttentionImpl", "_supports_video_spans", "_report_schedule"},
         {
             "dataclass": dataclasses.dataclass,
+            "replace": dataclasses.replace,
             "AttentionImpl": object,
             "math": math,
+            "torch": torch,
+            "cast": lambda annotation, value: value,
+            "AttentionMetadata": object,
+            "functools": functools,
+            "inspect": inspect,
+            "normalize_schedule": schedule.normalize_schedule,
+            "resolve_sparsity": schedule.resolve_sparsity,
+            "get_forward_context": lambda: progress,
+            "is_forward_context_available": lambda: True,
+            "_research_routes": Counter(),
+            "_mindiesd_supports_precision": lambda: True,
+            "_INPUT_LAYOUT": "BSND",
+            "_INNER_PRECISE": 0,
             "logger": Mock(),
             "_MIN_VIDEO_BLOCKS": 32,
             "_BLOCK_SIZE": 128,
@@ -225,3 +265,144 @@ def test_rectangular_query_blocks_are_remapped_and_plan_is_cached(selection, mon
     assert selection.rectangular_plan(*args) == (((0, 1),), (1, 2))
     helper.build_ref_plan.assert_called_once_with(list(range(896)), (), ((384, 896),), 128, {0, 1}, ((0, 2, 4, 6),))
     native_geometry.get_plan.assert_called_once_with(*args[:4])
+
+
+def test_lq_slim_config_roundtrip_and_scalar_default(config, backend):
+    values = [0.8, 0.8] + [0.85] * 6
+    spec = config.AttentionSpec(
+        backend="RAINFUSION_ATTN",
+        block_sparse={"sparsity": 0.8, "step_sparsities": values, "ref_keep_ratio": 0.1, "precision": "mix"},
+    )
+    parsed = backend.RainFusionConfig.from_backend_kwargs(spec.backend_kwargs())
+    assert parsed.step_sparsities == tuple(values)
+    assert parsed.ref_keep_ratio == 0.1 and parsed.precision == "mix"
+    default = config.AttentionSpec(backend="RAINFUSION_ATTN").backend_kwargs()
+    assert "step_sparsities" not in default
+    assert backend.RainFusionConfig.from_backend_kwargs(default).step_sparsities == ()
+
+
+@pytest.mark.parametrize("values", [[0], [1], [-0.1], [float("nan")], [float("inf")], "0.8"])
+def test_schedule_rejects_invalid_values(config, backend, values):
+    with pytest.raises(ValueError, match="step_sparsities"):
+        config.BlockSparseSpec(step_sparsities=values)
+    with pytest.raises(ValueError, match="step_sparsities"):
+        backend.RainFusionConfig.from_backend_kwargs({"step_sparsities": values})
+
+
+@pytest.mark.parametrize("step,total", [(None, 8), (-1, 8), (8, 8), (True, 8), (0, None), (0, 7), (0, 9)])
+def test_schedule_requires_valid_denoise_progress(schedule, step, total):
+    with pytest.raises(ValueError, match="step_sparsities"):
+        schedule.resolve_sparsity(0.8, (0.8,) * 8, step, total)
+    assert schedule.resolve_sparsity(0.8, (), step, total) == 0.8
+
+
+def test_eight_steps_dispatch_full_then_rectangular(backend, config, geometry, progress, monkeypatch):
+    calls = []
+
+    @dataclasses.dataclass
+    class RectangularPlan:
+        dense_rows: int = 0
+
+    def sparse_attention(q, k, v, *, precision, video_spans, sparsity, **kwargs):
+        calls.append(("full", sparsity, video_spans[0]["_ref_keep_ratio"]))
+        return torch.zeros_like(q)
+
+    def run(q, k, v, plan, sparsity, scale, *, ref_keep_ratio, **kwargs):
+        calls.append(("rectangular", sparsity, ref_keep_ratio))
+        return torch.zeros_like(q)
+
+    native = ModuleType("mindiesd")
+    native.__dict__["sparse_attention"] = sparse_attention
+    platform = ModuleType("mindiesd.utils.get_platform")
+    platform.__dict__["is_a5_device"] = lambda: True
+    rectangular = ModuleType("vllm_omni.diffusion.attention.ops.research_rectangular_bf16")
+    rectangular.__dict__["get_plan"] = lambda *args: RectangularPlan()
+    rectangular.__dict__["run"] = run
+    selection = ModuleType("vllm_omni.diffusion.attention.ops.reference_block_selection")
+    selection.__dict__["rectangular_plan"] = lambda *args: (((0,),), (1,))
+    for module in (native, platform, rectangular, selection):
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+    instance = backend.RainFusionAttentionImpl.__new__(backend.RainFusionAttentionImpl)
+    instance.rainfusion = backend.RainFusionConfig.from_backend_kwargs(
+        config.AttentionSpec(
+            backend="RAINFUSION_ATTN",
+            block_sparse={"step_sparsities": [0.8, 0.8] + [0.85] * 6, "ref_keep_ratio": 0.1, "precision": "mix"},
+        ).backend_kwargs()
+    )
+    instance.qkv_layout = "BSND"
+    instance.softmax_scale = 0.25
+    instance._resolve_plan = lambda metadata: backend.RainFusionPlan(
+        used_len=int(metadata.extra["max_seqlen_q"]),
+        video_spans=[{"start": 4, "latent_shape": [1, 1, 8], "_ref_keep_ratio": 0.1}],
+    )
+    q = torch.ones(1, 8, 2, 16)
+    span = geometry.VideoTokenSpan(start=0, latent_grid=(1, 1, 8), role="target")
+    layout = geometry.VideoTokenLayout(used_len=8, video_spans=(span,))
+    kv_layout = dataclasses.replace(layout, used_len=12, reference_image_spans=((0, 4),))
+    for step in range(8):
+        progress.denoise_step_idx = step
+        metadata = geometry.AttentionMetadata(extra={"max_seqlen_q": 8})
+        kv = q
+        if step:
+            metadata = geometry.AttentionMetadata(
+                extra={
+                    "max_seqlen_q": 8,
+                    "max_seqlen_k": 12,
+                    "minimax_h3_compact_reference_rows": 4,
+                    "minimax_h3_reference_kv_video_layout": kv_layout,
+                },
+                video_layout=layout,
+            )
+            kv = torch.ones(1, 12, 2, 16)
+        assert instance.forward_npu(q, kv, kv, metadata).shape == q.shape
+    assert calls == [("full", 0.8, 0.1), ("rectangular", 0.8, 0.1)] + [("rectangular", 0.85, 0.1)] * 6
+    assert sum(v for k, v in backend._research_routes.items() if k.startswith("scheduled_")) == 8
+    # Token-refiner calls without sparse geometry must not need a step index.
+    progress.denoise_step_idx = progress.total_denoise_steps = None
+    instance._resolve_plan = lambda metadata: None
+    instance.dense_fallback = torch.nn.Module()
+    instance.dense_fallback.forward_npu = lambda q, k, v, metadata: q
+    assert instance.forward_npu(q, q, q) is q
+
+
+@pytest.mark.parametrize("offload", [False, True])
+def test_rope_preparation_activates_offload_before_forward(monkeypatch, offload):
+    denoise = definitions(
+        "_lq_rope",
+        "vllm_omni/diffusion/models/minimax_h3/denoise_loop.py",
+        {"MiniMaxH3DenoiseBranch"},
+        {"nullcontext": nullcontext},
+    )
+    events: list[str] = []
+
+    class Registry:
+        def get_hook(self, name):
+            assert name == "sequential_offload"
+            return self if offload else None
+
+    class Model(torch.nn.Module):
+        _hook_registry = Registry()
+
+        def prepare_rope_table(self, positions, *, seq_len):
+            assert seq_len == len(positions)
+            assert events == (["activate"] if offload else [])
+            events.append("prepare")
+            return positions + 1
+
+    @contextmanager
+    def placement(model):
+        events.append("activate")
+        try:
+            yield
+        finally:
+            events.append("release")
+
+    module = ModuleType("vllm_omni.diffusion.offloader")
+    module.__dict__["sequential_offload_component"] = placement
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    branch = denoise.MiniMaxH3DenoiseBranch.__new__(denoise.MiniMaxH3DenoiseBranch)
+    branch.seq_len = 4
+    branch.static_kwargs = {"img_position_ids": torch.arange(4)}
+    branch.prepare_rope_table(Model())
+    assert events == (["activate", "prepare", "release"] if offload else ["prepare"])
+    torch.testing.assert_close(branch.static_kwargs["rope_table"], torch.arange(4) + 1)

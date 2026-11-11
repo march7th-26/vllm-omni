@@ -21,10 +21,17 @@ from vllm_omni.diffusion.attention.backends.abstract import (
     PackedPaddingMetadata,
 )
 from vllm_omni.diffusion.attention.backends.flash_attn import FlashAttentionBackend
+from vllm_omni.diffusion.attention.ops.step_sparsity import normalize_schedule, resolve_sparsity
 from vllm_omni.diffusion.config import get_current_diffusion_config_or_none
 from vllm_omni.diffusion.forward_context import get_forward_context, is_forward_context_available
 
 logger = init_logger(__name__)
+
+
+@functools.lru_cache(maxsize=128)
+def _report_schedule(route: str, step: int, sparsity: float, ratio: float) -> None:
+    logger.info("RainFusion schedule route=%s step=%d sparsity=%.2f ref_keep_ratio=%.2f", route, step, sparsity, ratio)
+
 
 # The rf_v2 kernel only implements a 128-token block.
 _BLOCK_SIZE = 128
@@ -100,6 +107,7 @@ class RainFusionConfig:
     The realized sparsity is lower because rf_v2 always keeps the prefix rows and
     the first-frame blocks. ``start_step`` and ``skip_layers`` are the accuracy
     knobs: early denoise steps and specific DiT blocks stay dense.
+    ``step_sparsities`` supplies a per-denoise-step override on sparse calls.
     """
 
     sparsity: float = 0.0
@@ -108,6 +116,7 @@ class RainFusionConfig:
     precision: str = "bf16"
     skip_layers: frozenset[int] = frozenset()
     ref_keep_ratio: float = 1.0
+    step_sparsities: tuple[float, ...] = ()
 
     def __post_init__(self) -> None:
         if not 0.0 < self.ref_keep_ratio <= 1.0:
@@ -125,6 +134,7 @@ class RainFusionConfig:
             precision=str(bk.get("precision", "bf16")),
             skip_layers=frozenset(bk.get("skip_layers") or ()),
             ref_keep_ratio=float(bk.get("ref_keep_ratio", 1.0)),
+            step_sparsities=normalize_schedule(bk.get("step_sparsities")),
         )
 
     @property
@@ -330,6 +340,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                         for span in cast(list[dict[str, object]], plan.video_spans)
                     )
                     rect_plan = get_plan(used_kv, reference_rows, spans, str(query.device))
+                    sparsity = self._step_sparsity()
                     selection = None
                     if self.rainfusion.ref_keep_ratio < 1.0:
                         from vllm_omni.diffusion.attention.ops.reference_block_selection import rectangular_plan
@@ -352,12 +363,13 @@ class RainFusionAttentionImpl(AttentionImpl):
                         key[:, :used_kv],
                         value[:, :used_kv],
                         rect_plan,
-                        self.rainfusion.sparsity,
+                        sparsity,
                         self.softmax_scale,
                         precision=self.rainfusion.precision,
                         ref_selection=selection,
                         ref_keep_ratio=self.rainfusion.ref_keep_ratio,
                     )
+                    self._record_schedule("rectangular", sparsity)
                     _research_routes["sparse_success"] += 1
                     _research_routes["rectangular_sparse_success"] += 1
                     if self.rainfusion.precision == "mix":
@@ -380,6 +392,24 @@ class RainFusionAttentionImpl(AttentionImpl):
         if query.ndim != 4 or key.shape != query.shape or value.shape != query.shape or plan.used_len > query.shape[1]:
             raise ValueError("RainFusion video geometry must fit identical full-sequence BSND Q/K/V tensors.")
         return self._forward_sparse_npu(query, key, value, plan, attn_metadata)
+
+    def _step_sparsity(self) -> float:
+        rf = self.rainfusion
+        if not rf.step_sparsities:
+            return rf.sparsity
+        context = get_forward_context() if is_forward_context_available() else None
+        return resolve_sparsity(
+            rf.sparsity,
+            rf.step_sparsities,
+            context.denoise_step_idx if context else None,
+            context.total_denoise_steps if context else None,
+        )
+
+    def _record_schedule(self, route: str, sparsity: float) -> None:
+        if self.rainfusion.step_sparsities:
+            step = cast(int, get_forward_context().denoise_step_idx)
+            _research_routes[f"scheduled_{route}_step_{step}_sparsity_{sparsity:.2f}"] += 1
+            _report_schedule(route, step, sparsity, self.rainfusion.ref_keep_ratio)
 
     def _can_use_hybrid(self, query: torch.Tensor, metadata: AttentionMetadata | None) -> bool:
         if (
@@ -455,7 +485,7 @@ class RainFusionAttentionImpl(AttentionImpl):
             value[:, :used_kv],
             plan,
             dense_forward,
-            sparsity=self.rainfusion.sparsity,
+            sparsity=self._step_sparsity(),
             scale=self.softmax_scale,
             inner_precise=_INNER_PRECISE,
             kernel_dtype="fp16",
@@ -730,7 +760,7 @@ class RainFusionAttentionImpl(AttentionImpl):
             "input_layout": _INPUT_LAYOUT,
             "inner_precise": 4 if precision != "bf16" else _INNER_PRECISE,
             "block_size": _BLOCK_SIZE,
-            "sparsity": self.rainfusion.sparsity,
+            "sparsity": self._step_sparsity(),
             "precision": precision,
         }
         if plan.video_spans is not None:
@@ -753,6 +783,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 latent_shape_k=plan.latent_shape,
             )
             out = sparse_attention(q, k, v, **common_kwargs)
+        self._record_schedule("full", cast(float, common_kwargs["sparsity"]))
         if precision == "mix":
             _research_routes["full_query_mix_success"] += 1
         if used == query.shape[1]:

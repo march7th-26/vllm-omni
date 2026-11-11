@@ -20,6 +20,12 @@ The selection path has four responsibilities:
    hardware default; and
 4. load the selected `AttentionBackend` class from the registry path.
 
+RainFusion's optional `block_sparse.step_sparsities` is normalized through
+`BlockSparseSpec` and serialized into backend kwargs without changing backend
+selection. Full and rectangular sparse calls resolve the same zero-based
+denoise-step override. An active schedule requires a matching total step count;
+dense fallback calls retain their existing progress requirements.
+
 ## Resolution contract
 
 `get_attn_backend_for_role()` resolves configuration in this order:
