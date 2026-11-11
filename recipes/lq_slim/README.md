@@ -112,7 +112,7 @@ match across both runs.
 ## Validation
 
 This branch ports the complete scheme onto official main
-`0b74da131f963ab2fd60f7eba813145672cf81e4`. Earlier results from the separate
+`4bc340899368f817c1c481b9c5a060c705270304`. Earlier results from the separate
 `lq-slim` branch do not validate this revision. NPU end-to-end execution,
 performance and output quality for this port remain unverified.
 
