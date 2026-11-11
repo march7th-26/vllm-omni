@@ -21,6 +21,10 @@ class StartupFlags:
     lora_path: str | None = None
     lora_backend: str = "distill"
     lora_scale: float = 1.0
+    diffusion_offload_config: dict[str, object] | None = None
+    enable_cpu_offload: bool = False
+    enable_layerwise_offload: bool = False
+    enable_distributed_layerwise_offload: bool = False
 
 
 @pytest.fixture
@@ -71,6 +75,72 @@ def test_startup_adapter_is_opt_in_and_requires_fixed_scale(adapter, tmp_path):
     config.lora_scale = 0.5
     with pytest.raises(ValueError, match="lora-scale"):
         adapter.resolve_adapter_path(config)
+
+
+@pytest.mark.parametrize(
+    "config,rejected",
+    [
+        pytest.param(StartupFlags(), False, id="no-offload"),
+        pytest.param(StartupFlags(enable_cpu_offload=True), True, id="legacy-module-dit"),
+        pytest.param(StartupFlags(enable_layerwise_offload=True), True, id="legacy-layer-dit"),
+        pytest.param(StartupFlags(enable_distributed_layerwise_offload=True), True, id="legacy-distributed-dit"),
+        *[
+            pytest.param(
+                StartupFlags(diffusion_offload_config={"mode": mode, "components": [component]}),
+                component == "dit",
+                id=f"{mode}-{component}",
+            )
+            for mode in ("module", "layer")
+            for component in ("dit", "text_encoder")
+        ],
+    ],
+)
+def test_startup_adapter_requires_resident_dit(config, rejected, monkeypatch):
+    root = Path(__file__).resolve().parents[4]
+    source = root / "vllm_omni/diffusion/models/minimax_h3/pipeline_minimax_h3.py"
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MiniMaxH3Pipeline")
+    constructor = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "__init__")
+    guard = next(
+        node
+        for node in constructor.body
+        if isinstance(node, ast.If) and ast.unparse(node.test) == "self._ref2va_lora_path is not None"
+    )
+    # Exercise the production startup checks and resolver without loading a model.
+    spec = importlib.util.spec_from_file_location(
+        "_ref2va_offload_test", root / "vllm_omni/diffusion/offloader/config.py"
+    )
+    assert spec is not None and spec.loader is not None
+    offload = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, offload)
+    spec.loader.exec_module(offload)
+
+    class Pipeline:
+        _ref2va_lora_path = Path("startup-adapter")
+        supported_tasks = {"ref2va"}
+
+        def _base_schedule_for_task(self, task):
+            return None
+
+    class NPUPlatform:
+        @staticmethod
+        def is_npu():
+            return True
+
+    namespace = {
+        "self": Pipeline(),
+        "od_config": config,
+        "current_omni_platform": NPUPlatform(),
+        "resolve_offload": offload.resolve_offload,
+        "OffloadStrategy": offload.OffloadStrategy,
+        "DIT_COMPONENT": offload.DIT_COMPONENT,
+    }
+    checks = compile(ast.Module(body=[guard], type_ignores=[]), str(source), "exec")
+    if rejected:
+        with pytest.raises(ValueError, match="resident DiT weights"):
+            exec(checks, namespace)
+    else:
+        exec(checks, namespace)
 
 
 @pytest.mark.parametrize(

@@ -1242,7 +1242,8 @@ class MiniMaxH3Pipeline(
                 raise ValueError("the eight-step Ref2VA startup adapter currently supports Ascend NPU only")
             if "ref2va" not in self.supported_tasks:
                 raise ValueError("the eight-step Ref2VA adapter requires a Ref2VA model partition")
-            if resolve_offload(od_config).offloads(DIT_COMPONENT):
+            offload = resolve_offload(od_config)
+            if offload.strategy is not OffloadStrategy.NONE and offload.offloads(DIT_COMPONENT):
                 raise ValueError("the eight-step Ref2VA adapter requires resident DiT weights")
             if self._base_schedule_for_task("ref2va") is not None:
                 raise ValueError("the eight-step Ref2VA adapter cannot override a checkpoint's pinned schedule")
