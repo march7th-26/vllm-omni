@@ -1,10 +1,18 @@
 # LQ-Slim
 
-LQ-Slim combines eight-step MiniMax-H3 Ref2VA LoRA, NPU-resident reference KV,
-rectangular mixed-precision attention and per-image reference block selection.
+The recommended LQ-Slim configuration combines eight-step MiniMax-H3 Ref2VA
+LoRA, NPU-resident reference KV, rectangular mixed-precision attention and
+per-image reference block selection.
 The target sparsity is 0.8 for steps 0–1 and 0.85 for steps 2–7; reference-image
 candidate blocks use a 0.1 keep ratio. These are approximate optimizations;
 output quality must be evaluated for the intended inputs.
+
+The complete eight-step recipe pairs the Larry v4-step600 EMA adapter with
+fixed sampling settings so deployments can reproduce the same configuration
+when evaluating reference fidelity and audio/video quality. Adapter integration
+and the Ref extensions are included together, but each Ref option remains
+independent of the adapter. Selecting this LoRA alone does not establish
+output quality for a particular sparsity or precision setting.
 
 For deployments that only need the two Ref extensions, see the independent
 [reference optimization guide](../h3_ref_optimizations/README.md). They do not
