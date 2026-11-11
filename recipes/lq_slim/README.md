@@ -11,7 +11,7 @@ MiniMax-H3 Ref2VA 的八步 LoRA、参考 KV 复用、矩形 mix attention 和�
 再按常规源码安装方式安装本分支：
 
 ```bash
-git clone --branch codex/lq-slim --single-branch https://github.com/march7th-26/vllm-omni.git
+git clone --branch lq-slim --single-branch https://github.com/march7th-26/vllm-omni.git
 cd vllm-omni
 VLLM_OMNI_TARGET_DEVICE=npu pip install -e . --no-build-isolation
 ```
