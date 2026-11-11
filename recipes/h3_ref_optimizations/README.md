@@ -94,7 +94,7 @@ normal request endpoint and your existing sampling and LoRA flags.
 ## Validation
 
 The contribution is based on official main
-`0b74da131f963ab2fd60f7eba813145672cf81e4`, which already includes host reference
+`4bc340899368f817c1c481b9c5a060c705270304`, which already includes host reference
 KV reuse. This branch adds device storage, compact SP alignment and image
 selection integration. Earlier experiments of a complete LoRA/quantization/
 reference configuration do not validate this extracted revision or attribute
