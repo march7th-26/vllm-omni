@@ -140,3 +140,14 @@ step count. Per-image reference selection is a separate RainFusion option and
 requires exact image ownership metadata. See the
 [reference optimization recipe](../../../../recipes/h3_ref_optimizations/README.md)
 for configuration, its independent MindIE-SD dependency and validation limits.
+
+### Fixed eight-step Ref2VA adapter
+
+The optional Ref2VA startup adapter accepts the immutable v4-step600 EMA artifact through
+the normal startup LoRA flags. It adds BF16 deltas after base projections,
+including quantized projections. Its hash and 259-target layout are validated
+before binding. Installation clears the AdaLN projection cache; forward hooks
+retain that cache's normal conservative fallback. The adapter requires resident
+DiT weights, scale 1, eight steps and DiT TP=1; it disables per-request adapter
+switching. These restrictions do not apply to the independent Ref extensions.
+See the [recommended eight-step configuration](../../../../recipes/h3_ref_optimizations/README.md#recommended-eight-step-lora-configuration).
