@@ -821,6 +821,51 @@ class MiniMaxH3ReferenceKVResidentState(MiniMaxH3ReferenceKVTier2State):
 
     tier_name = "Resident"
 
+    def process_post_parallel_chunk(self, layer_index, key, value, *, compact, head_start, total_heads):
+        """Capture/inject one contiguous rank-local head range, in layer order."""
+        if self._step is None or layer_index != len(self._layers_seen) or layer_index >= self.num_layers:
+            raise RuntimeError("resident chunks require an active step and ordered layers")
+        if key.shape != value.shape or key.ndim != 4 or key.shape[0] != 1:
+            raise ValueError("resident chunks require matching [1,S,H,D] K/V")
+        width = key.shape[2]
+        expected_start = getattr(self, "_chunk_next_head", 0)
+        if head_start != expected_start or width <= 0 or head_start + width > total_heads:
+            raise RuntimeError("resident head chunks must cover each layer once in order")
+        if compact == self._refresh or self.host_quantization != "none":
+            raise ValueError("resident chunk refresh/compact or storage contract changed")
+        shape = (2, self.num_layers, self.global_reference_rows, total_heads, key.shape[3])
+        if self._host_pool is None:
+            if not self._refresh:
+                raise RuntimeError("resident chunk reuse before capture")
+            self._host_pool = torch.empty(shape, dtype=key.dtype, device=key.device)
+        if (
+            tuple(self._host_pool.shape) != shape
+            or self._host_pool.dtype != key.dtype
+            or self._host_pool.device != key.device
+        ):
+            raise ValueError("resident chunk pool layout changed")
+        cached = self._host_pool[:, layer_index, :, head_start : head_start + width]
+        if self._refresh:
+            if key.shape[1] != self._global_sequence_rows:
+                raise ValueError("resident chunk refresh sequence changed")
+            torch.index_select(key[0], 0, self.global_reference_positions, out=cached[0])
+            torch.index_select(value[0], 0, self.global_reference_positions, out=cached[1])
+            self.stats.capture_bytes += cached.numel() * key.element_size()
+            result = key, value
+        else:
+            if key.shape[1] != self._global_sequence_rows - self.global_reference_rows:
+                raise ValueError("resident chunk compact sequence changed")
+            result = torch.cat((cached[0].unsqueeze(0), key), 1), torch.cat((cached[1].unsqueeze(0), value), 1)
+        self._chunk_next_head = head_start + width
+        if self._chunk_next_head == total_heads:
+            self._chunk_next_head = 0
+            self._layers_seen.add(layer_index)
+            if self._refresh:
+                self.stats.captured_layers += 1
+            else:
+                self.stats.substituted_layers += 1
+        return result
+
     @property
     def host_bytes(self) -> int:
         return 0
@@ -898,6 +943,7 @@ class MiniMaxH3ReferenceKVResidentState(MiniMaxH3ReferenceKVTier2State):
         super().close()
         self._research_concat_scratch = None
         self._research_reference_mask = None
+        self._chunk_next_head = 0
 
     def mark_block_cache_skipped(self, layer_indices: list[int]) -> None:
         _MiniMaxH3ReferenceKVBase.mark_block_cache_skipped(self, layer_indices)

@@ -2125,6 +2125,9 @@ class BlockSparseSpec:
     ``precision`` selects the kernel precision mode (see ``RainFusionPrecision``).
     ``step_sparsities`` optionally overrides ``sparsity`` at each zero-based
     denoise step. An empty schedule keeps the scalar configuration.
+    ``head_chunk_size`` enables H3 resident-Ref BF16 head-chunk transport;
+    zero preserves the existing transport. ``sparse_graph`` captures only the
+    local sparse consumer, with dynamic Ref state and communication outside.
     """
 
     sparsity: float = 0.8
@@ -2135,9 +2138,15 @@ class BlockSparseSpec:
     skip_layers: str | list[int] | None = None
     skip_layer_indices: set[int] | None = field(default=None, repr=False)
     step_sparsities: list[float] | None = None
+    head_chunk_size: int = 0
+    sparse_graph: bool = False
 
     def __post_init__(self) -> None:
         self.sparsity = _in_range(self.sparsity, "block_sparse.sparsity", 0.0, 1.0) or 0.0
+        if type(self.head_chunk_size) is not int or self.head_chunk_size < 0:
+            raise ValueError("block_sparse.head_chunk_size must be a nonnegative integer")
+        if type(self.sparse_graph) is not bool:
+            raise ValueError("block_sparse.sparse_graph must be a boolean")
         self.step_sparsities = list(normalize_schedule(self.step_sparsities))
         if isinstance(self.image_sparsity, bool) or not isinstance(self.image_sparsity, (int, float)):
             raise ValueError("block_sparse.image_sparsity must be a number within [0, 1].")
@@ -2255,6 +2264,10 @@ class AttentionSpec:
             kw["start_step"] = bs.start_step
             kw["end_step"] = bs.end_step
             kw["precision"] = bs.precision
+            if bs.head_chunk_size:
+                kw["head_chunk_size"] = bs.head_chunk_size
+            if bs.sparse_graph:
+                kw["sparse_graph"] = True
             if bs.image_sparsity > 0.0:
                 kw["image_sparsity"] = bs.image_sparsity
             if bs.skip_layer_indices:

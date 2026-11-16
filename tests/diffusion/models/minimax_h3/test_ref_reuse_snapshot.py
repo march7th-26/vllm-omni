@@ -79,6 +79,59 @@ def test_eight_step_reference_values_and_cleanup(cache_module: ModuleType) -> No
     assert state.device_cache_bytes == 0 and state._research_concat_scratch is None
 
 
+@pytest.mark.parametrize("chunk_size", [1, 2, 3])
+@torch.inference_mode()
+def test_chunk_cache_matches_whole_layer_eight_steps(cache_module, chunk_size):
+    states = [
+        cache_module.MiniMaxH3ReferenceKVResidentState(
+            num_layers=2, global_reference_rows=2, device=torch.device("cpu"), refresh_interval=8
+        )
+        for _ in range(2)
+    ]
+    for state in states:
+        state.set_global_reference_mask(torch.tensor([False, True, False, True, False]))
+    original = torch.arange(40, dtype=torch.float32).reshape(1, 5, 4, 2)
+    for step in range(8):
+        for state in states:
+            state.begin_step(step)
+        for layer in range(2):
+            full = original + 100 * layer + 1000 * step
+            key = full if step == 0 else full[:, [0, 2, 4]]
+            expected = states[0].process_post_parallel_layer(
+                layer, key, key + 50, compact=step > 0, parallel_strategy="none"
+            )
+            chunks: list[list[torch.Tensor]] = [[], []]
+            for start in range(0, 4, chunk_size):
+                k = key[:, :, start : start + chunk_size]
+                result = states[1].process_post_parallel_chunk(
+                    layer, k, k + 50, compact=step > 0, head_start=start, total_heads=4
+                )
+                for index in range(2):
+                    chunks[index].append(result[index])
+            for index in range(2):
+                torch.testing.assert_close(torch.cat(chunks[index], 2), expected[index])
+        for state in states:
+            state.end_step()
+    assert states[0].stats == states[1].stats
+    for state in states:
+        state.close()
+
+
+def test_incomplete_or_duplicate_head_chunk_rejected(cache_module):
+    state = cache_module.MiniMaxH3ReferenceKVResidentState(
+        num_layers=1, global_reference_rows=1, device=torch.device("cpu"), refresh_interval=8
+    )
+    state.set_global_reference_mask(torch.tensor([True, False]))
+    state.begin_step(0)
+    key = torch.ones(1, 2, 1, 2)
+    state.process_post_parallel_chunk(0, key, key, compact=False, head_start=0, total_heads=2)
+    with pytest.raises(RuntimeError, match="once in order"):
+        state.process_post_parallel_chunk(0, key, key, compact=False, head_start=0, total_heads=2)
+    with pytest.raises(RuntimeError, match="0/1 layers"):
+        state.end_step()
+    state.close()
+
+
 @torch.inference_mode()
 def test_partial_capture_fails_and_request_cleanup_releases_pool(cache_module: ModuleType) -> None:
     state = cache_module.MiniMaxH3ReferenceKVResidentState(

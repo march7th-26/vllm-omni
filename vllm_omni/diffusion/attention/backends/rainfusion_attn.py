@@ -117,8 +117,14 @@ class RainFusionConfig:
     skip_layers: frozenset[int] = frozenset()
     image_sparsity: float = 0.0
     step_sparsities: tuple[float, ...] = ()
+    head_chunk_size: int = 0
+    sparse_graph: bool = False
 
     def __post_init__(self) -> None:
+        if type(self.head_chunk_size) is not int or self.head_chunk_size < 0:
+            raise ValueError("RainFusion head_chunk_size must be a nonnegative integer")
+        if type(self.sparse_graph) is not bool:
+            raise ValueError("RainFusion sparse_graph must be a boolean")
         if isinstance(self.image_sparsity, bool) or not isinstance(self.image_sparsity, (int, float)):
             raise ValueError("RainFusion image_sparsity must be a number within [0, 1].")
         if not 0 <= self.image_sparsity <= 1:
@@ -135,6 +141,8 @@ class RainFusionConfig:
             skip_layers=frozenset(bk.get("skip_layers") or ()),
             image_sparsity=bk.get("image_sparsity", 0.0),
             step_sparsities=normalize_schedule(bk.get("step_sparsities")),
+            head_chunk_size=bk.get("head_chunk_size", 0),
+            sparse_graph=bk.get("sparse_graph", False),
         )
 
     @property
@@ -763,13 +771,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 raise ValueError("Upgrade MindIE-SD: independent image sparsity requires image_spans/image_sparsity.")
             common_kwargs.update(image_spans=plan.image_spans, image_sparsity=self.rainfusion.image_sparsity)
         if plan.video_spans is not None:
-            out = sparse_attention(
-                q,
-                k,
-                v,
-                video_spans=plan.video_spans,
-                **common_kwargs,
-            )
+            common_kwargs["video_spans"] = plan.video_spans
         else:
             assert plan.prefix_len is not None and plan.latent_shape is not None
             common_kwargs.update(
@@ -779,7 +781,22 @@ class RainFusionAttentionImpl(AttentionImpl):
                 latent_shape_q=plan.latent_shape,
                 latent_shape_k=plan.latent_shape,
             )
+        if self.rainfusion.sparse_graph:
+            from vllm_omni.diffusion.attention.ops.h3_sparse_graph import get_shared_sparse_graph
+
+            if not hasattr(self, "_h3_sparse_graph"):
+                self._h3_sparse_graph = get_shared_sparse_graph()
+            out = self._h3_sparse_graph.run(
+                lambda sq, sk, sv: sparse_attention(sq, sk, sv, **common_kwargs),
+                (q, k, v),
+                repr(common_kwargs),
+            )
+        else:
             out = sparse_attention(q, k, v, **common_kwargs)
+        if self.rainfusion.sparse_graph:
+            # The next head/layer can replay the shared graph while the current
+            # output is still consumed by the reverse communication stream.
+            out = out.clone()
         self._record_schedule("full", cast(float, common_kwargs["sparsity"]))
         if precision == "mix":
             _research_routes["full_query_mix_success"] += 1

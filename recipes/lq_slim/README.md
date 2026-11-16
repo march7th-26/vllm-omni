@@ -5,6 +5,8 @@ MiniMax-H3 Ref2VA 的八步 LoRA、参考 KV 复用、mix attention 和分步稀
 开启图片稀疏时，复用步在 Ulysses 后补 dummy 参考 Q，走新版等长 Q/K/V 路径并丢弃参考输出。
 参考投影与参考 KV 仍复用；关闭图片稀疏时保留原矩形路径。
 
+通算重叠、AudioVAE 和局部 NPU Graph 的可选组合见[组合版说明](../lq_slim_stack/README.md)。
+
 ## 安装
 
 准备已有的 Ascend A5 推理环境，安装

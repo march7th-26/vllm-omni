@@ -1105,6 +1105,13 @@ class MiniMaxH3AudioVAE(nn.Module):
         # encoding and waveform decoding.
         initial_device = load_device or device
         self.remote.eval().to(device=initial_device, dtype=torch.float32)
+        if os.environ.get("VLLM_OMNI_MINIMAX_H3_AUDIO_TCONV_CONV1D", "0") == "1":
+            from vllm_omni.diffusion.models.minimax_h3.audio_conv import install_audio_conv1d
+
+            # Only decoder modules are patched; reference encoding is unchanged.
+            decoder = getattr(self.remote.model, "decoder", None)
+            if decoder is not None:
+                logger.info("H3 AudioVAE polyphase Conv1d enabled: %d layers", install_audio_conv1d(decoder))
         self._stager = None
         if initial_device.type == "cpu" and device.type not in ("cpu", "meta"):
             self._stager = PinnedModuleStager(

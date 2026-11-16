@@ -588,6 +588,43 @@ class Attention(nn.Module):
             if strategy_name == "ulysses" and get_ulysses_mode(default="strict") != "strict":
                 raise NotImplementedError("paged Scheduler KV currently supports only strict Ulysses")
 
+        rf = getattr(self.attention, "rainfusion", None)
+        if rf is not None and rf.head_chunk_size:
+            ref = attn_metadata.extra.get("minimax_h3_reference_kv_post_parallel") if attn_metadata else None
+            if (
+                use_paged_attention
+                or self.use_ring
+                or strategy.name != "ulysses"
+                or get_ulysses_mode(default="strict") != "strict"
+                or attn_metadata is None
+                or not isinstance(ref, tuple)
+                or len(ref) != 3
+                or not callable(getattr(ref[0], "process_post_parallel_chunk", None))
+                or attn_metadata.joint_query is not None
+                or attn_metadata.joint_key is not None
+                or attn_metadata.joint_value is not None
+                or attn_metadata.extra.get("gate_compress") is not None
+            ):
+                raise ValueError("H3 head overlap requires strict pure Ulysses and resident reference KV")
+            from vllm_omni.diffusion.attention.ops.h3_head_overlap import H3HeadOverlap
+
+            if not hasattr(self, "_h3_head_overlap"):
+                self._h3_head_overlap = H3HeadOverlap(strategy._ulysses_pg, rf.head_chunk_size)
+                logger.info_once(
+                    "H3 head overlap enabled: chunk=%d, BF16 wire, local sparse consumer", rf.head_chunk_size
+                )
+            state, layer, compact = ref
+            return self._h3_head_overlap.run(
+                query,
+                key,
+                value,
+                self._with_kv_cache_dtype(attn_metadata),
+                state,
+                int(layer),
+                bool(compact),
+                self._run_local_attention,
+            )
+
         # 1. Prepare inputs (Communication / Resharding)
         # For Ulysses: AllToAll Q/K/V; Slicing joint_q/k/v
         # For Ring: Concat joint_q

@@ -170,6 +170,23 @@ def test_new_image_api_roundtrip(config, backend):
     assert backend.RainFusionConfig.from_backend_kwargs(kwargs).image_sparsity == 0.9
 
 
+def test_stack_controls_roundtrip(config, backend):
+    spec = config.AttentionSpec(
+        backend="RAINFUSION_ATTN",
+        block_sparse={"head_chunk_size": 1, "sparse_graph": True, "image_sparsity": 0.9, "precision": "mix"},
+    )
+    resolved = backend.RainFusionConfig.from_backend_kwargs(spec.backend_kwargs())
+    assert resolved.head_chunk_size == 1 and resolved.sparse_graph is True
+    assert resolved.precision == "mix" and resolved.image_sparsity == 0.9
+
+
+@pytest.mark.parametrize("values", [{"head_chunk_size": -1}, {"head_chunk_size": True}, {"sparse_graph": "false"}])
+def test_invalid_stack_controls(config, backend, values):
+    for cls in (config.BlockSparseSpec, backend.RainFusionConfig):
+        with pytest.raises(ValueError):
+            cls(**values)
+
+
 @pytest.mark.parametrize("ratio", [-0.1, 1.1, float("nan"), float("inf"), True, "0.9"])
 def test_invalid_ratio_is_rejected(config, backend, ratio):
     for cls in (config.BlockSparseSpec, backend.RainFusionConfig):
