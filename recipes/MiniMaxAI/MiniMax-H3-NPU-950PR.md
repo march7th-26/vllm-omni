@@ -176,9 +176,9 @@ MXFP8 and rectangular mix attention configuration on eight Ascend 950PR
 devices, see [H3-RefReuse](../h3_ref_reuse/README.md).
 
 To combine reference reuse with reference block selection (RBS), add
-`"ref_keep_ratio":0.5` to the existing RainFusion `block_sparse` configuration.
-Values in `(0, 1]` control the retained fraction per reference image; `1` disables
-RBS. Install the matching [MindIE-SD RBS version](../h3_ref_reuse/ENVIRONMENT.md#mindie-sd-rbs).
+`"image_sparsity":0.5` to the existing RainFusion `block_sparse` configuration.
+Values in `[0, 1]` control the dropped fraction per reference image; `0` disables
+selection. Install the matching [MindIE-SD image API](../h3_ref_reuse/ENVIRONMENT.md#mindie-sd-图片稀疏接口).
 The [quick start](../h3_ref_reuse/README.md) includes the complete `vllm serve`
 configuration and comparison settings.
 

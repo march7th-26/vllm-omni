@@ -32,27 +32,18 @@ MindIE-SD 3.2.0；并行为 USP4、ring1、文本编码 TP4、VAE tile/patch4、
   `5f3a626cd72c93a8b9318d6760c510bc5092d2ab13aaba1f932c5bab07a416d3`。
 - MindIE-SD 的 `sparse_attention` 需接受 `precision` 和 `video_spans`，
   并包含 rf_v2 多 span helper、rf_v3 量化接口与原生
-  `eagle_quant_block_sparse_attention` 算子；RBS 还需以下配套修改。
+  `eagle_quant_block_sparse_attention` 算子；图片稀疏还需以下公共接口。
 
-## MindIE-SD RBS
+## MindIE-SD 图片稀疏接口
 
-使用 [MindIE-SD RBS 分支](https://gitcode.com/qq_48159150/MindIE-SD/tree/rbs-experiment-source)，
-固定版本为 `512501b03324fc29998b3581b7978df1fb507c8d`，基于官方 MindIE-SD 3.2.0。
-在已具备上述 MindIE-SD 3.2.0 和原生算子的环境中，安装两份 RBS Python 文件：
+当前分支使用独立图片区域公共接口。配套 MindIE-SD 的 `sparse_attention` 必须显式声明
+`image_spans` 和 `image_sparsity`，rf_v2/rf_v3 必须同时支持相同的多区域重排与图片筛选。
+图片参数成对传入，且要求显式 `video_spans`。按该版本源码自带的安装说明正常安装 MindIE-SD，
+再使用本分支原有 CLI 启动；原 `rbs-experiment-source` 的两文件 helper 补丁不满足此接口。
 
-```bash
-git clone --branch rbs-experiment-source https://gitcode.com/qq_48159150/MindIE-SD.git
-cd MindIE-SD
-git checkout 512501b03324fc29998b3581b7978df1fb507c8d
-MINDIESD_DIR=$(python -c 'from importlib.metadata import distribution; print(distribution("mindiesd").locate_file("mindiesd"))')
-cp mindiesd/layers/flash_attn/ref_sparse_mask.py "$MINDIESD_DIR/layers/flash_attn/"
-cp mindiesd/layers/flash_attn/sparse_flash_attn_rf_v2.py "$MINDIESD_DIR/layers/flash_attn/"
-```
-
-需要构建 wheel 时，使用该版本的
-[安装说明](https://gitcode.com/qq_48159150/MindIE-SD/blob/512501b03324fc29998b3581b7978df1fb507c8d/reproduction/rbs/README.md#环境和安装)。
-上述两文件安装方式保留已有原生库；新构建的原生库需另做 NPU 回归。
-缺少 RBS helper 时，`ref_keep_ratio < 1` 会报错，不会静默忽略参数。
+缺少公共图片参数时，本分支在执行前报错，避免安装旧后端后静默忽略筛选。
+原生 Eagle 算子和 mix 精度仍需在目标 Ascend/CANN 环境验证；CPU 接口检查不替代 NPU 验证。
+历史3.2.0实验的性能与环境记录保留原版本口径。
 
 ## 配置范围
 

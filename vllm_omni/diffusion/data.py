@@ -2120,8 +2120,8 @@ class BlockSparseSpec:
     ``start_step`` keeps the first N denoise steps dense and ``skip_layers`` (an
     index selector such as "0-3,38") exempts individual DiT blocks. Those two are
     the accuracy knobs to trade back quality at a fixed ``sparsity``.
-    ``ref_keep_ratio`` retains a fraction of each reference image's candidate
-    blocks on the RBS-capable RainFusion path; 1.0 disables selection.
+    ``image_sparsity`` drops a fraction of each reference image's candidate
+    blocks for eligible video queries; zero disables image selection.
     ``precision`` selects the kernel precision mode (see ``RainFusionPrecision``).
     ``step_sparsities`` optionally overrides ``sparsity`` at each zero-based
     denoise step. An empty schedule keeps the scalar configuration.
@@ -2131,7 +2131,7 @@ class BlockSparseSpec:
     start_step: int = 0
     end_step: int = 0
     precision: str = RainFusionPrecision.BF16.value
-    ref_keep_ratio: float = 1.0
+    image_sparsity: float = 0.0
     skip_layers: str | list[int] | None = None
     skip_layer_indices: set[int] | None = field(default=None, repr=False)
     step_sparsities: list[float] | None = None
@@ -2139,11 +2139,10 @@ class BlockSparseSpec:
     def __post_init__(self) -> None:
         self.sparsity = _in_range(self.sparsity, "block_sparse.sparsity", 0.0, 1.0) or 0.0
         self.step_sparsities = list(normalize_schedule(self.step_sparsities))
-        self.ref_keep_ratio = float(self.ref_keep_ratio)
-        if not 0.0 < self.ref_keep_ratio <= 1.0:
-            raise ValueError("block_sparse.ref_keep_ratio must be in (0, 1].")
-        if self.ref_keep_ratio < 1.0 and self.sparsity <= 0.0:
-            raise ValueError("reference block selection requires positive block sparsity.")
+        if isinstance(self.image_sparsity, bool) or not isinstance(self.image_sparsity, (int, float)):
+            raise ValueError("block_sparse.image_sparsity must be a number within [0, 1].")
+        if not 0 <= self.image_sparsity <= 1:
+            raise ValueError("block_sparse.image_sparsity must be within [0, 1].")
         if self.start_step < 0:
             raise ValueError(f"block_sparse.start_step must be >= 0; got {self.start_step!r}.")
         if self.end_step < 0:
@@ -2256,8 +2255,8 @@ class AttentionSpec:
             kw["start_step"] = bs.start_step
             kw["end_step"] = bs.end_step
             kw["precision"] = bs.precision
-            if bs.ref_keep_ratio < 1.0:
-                kw["ref_keep_ratio"] = bs.ref_keep_ratio
+            if bs.image_sparsity > 0.0:
+                kw["image_sparsity"] = bs.image_sparsity
             if bs.skip_layer_indices:
                 kw["skip_layers"] = sorted(bs.skip_layer_indices)
 

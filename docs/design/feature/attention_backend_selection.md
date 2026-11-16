@@ -77,13 +77,16 @@ A backend reads only the fields it owns and rejects incompatible values. New
 options should be added to a shared typed spec only when more than one backend
 shares their semantics; otherwise add a dedicated typed block.
 
-The RainFusion `block_sparse.ref_keep_ratio` option defaults to `1` (RBS off).
-Values in `(0, 1)` require positive sparsity and the matching MindIE-SD RBS
-helpers. MiniMax-H3 supplies per-image ranges for full queries and exact image
-positions after reference-KV packing. The backend forwards this ownership to
-MindIE-SD for full queries and remaps target query block IDs for rectangular
-reuse. Missing RBS helpers raise; the ratio is never inferred from an environment
-variable. The option changes image-block connectivity, not the KV storage size.
+RainFusion `block_sparse.image_sparsity` defaults to `0` (image selection off).
+It is a drop ratio in `[0, 1]`; even at `1`, a nonempty candidate group retains
+at least one block. MiniMax-H3 publishes `ImageTokenSpan(start, latent_grid)`
+metadata through packing, reference-cache compaction and restoration. The backend
+passes public `image_spans/image_sparsity` arguments as a pair to matching MindIE-SD.
+All supplied video spans participate in image-key selection, except protected
+query rows. Image-enabled reference reuse pads dummy Q rows after Ulysses to
+satisfy the equal-length public ABI and discards their outputs. Image-disabled
+reuse retains the rectangular path. Missing public image parameters raise before
+execution. Selection changes connectivity, not KV storage or SP transport size.
 
 ## Model integration contract
 
