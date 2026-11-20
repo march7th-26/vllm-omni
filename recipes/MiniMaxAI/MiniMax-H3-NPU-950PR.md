@@ -116,6 +116,31 @@ vllm serve "${MODEL}" \
 The recommended lossy configuration uses a **start=8 / end=12** dense-fallback
 window; see below for more aggressive settings.
 
+### T2VA speed profile with Ulysses head overlap
+
+Build this branch on the vLLM-Ascend 0.29 A5 base with its Dockerfile:
+
+```bash
+docker build -f docker/Dockerfile.npu --build-arg VLLM_ASCEND_DEVICE_SUFFIX=-a5 -t h3-omni:dev-0.29-a5 .
+```
+
+The image pins MindIE-SD 3.2.0 for `rf_v3` mixed precision with `video_spans`.
+Use the four-card lossy command above, with MXFP8 enabled and DLO disabled.
+Replace the attention configuration and append the two overlap flags:
+
+```bash
+--diffusion-attention-config '{"default":{"backend":"RAINFUSION_ATTN","block_sparse":{"sparsity":0.8,"precision":"mix","start_step":0,"end_step":0}}}' \
+--diffusion-attn-head-overlap 7 \
+--diffusion-attn-head-overlap-graph
+```
+
+With USP4, each of the seven groups supplies two heads per rank. Use a fixed
+1344x768, 50-step T2VA request for the initial comparison. Look for
+`Ulysses head-split overlap active`, `precision=mix`, and `first NPUGraph replay`
+in the worker logs. Graph capture and speedup for this combined A5 profile
+require device validation. Leave the experimental estimate mask and row reorder
+hoist off for this profile.
+
 ### Optional optimizations
 
 The following sections list only the **increment or replacement** relative to

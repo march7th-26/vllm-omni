@@ -1,31 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
-"""Temporary: make MindIE-SD's rf_v2 multi-video preprocessing capturable.
+"""Cache MindIE-SD RainFusion geometry during eager warmup for NPUGraph.
 
-Graph-capturing the head-split attention region fails on the ``video_spans``
-(multi-video, i.e. Ref2VA) path, and it fails in MindIE-SD's Python rather than
-in the operator: with the attention op taken out entirely, the preprocessing
-alone still raises ``aclnnNonzeroV2``. Two constructs are responsible, both in
-``mindiesd/layers/flash_attn/sparse_flash_attn_rf_v2.py`` (mindiesd 3.1.0):
-
-* ``_multi_span_permutation`` selects the dense-context rows with
-  ``all_indices[~is_video]``. Boolean-mask indexing lowers to ``aclnnNonzeroV2``,
-  whose output shape is data dependent, so capture refuses it.
-* ``get_multi_span_blockwise_mask`` builds ``torch.tensor(retained, device=...)``
-  from a Python list on every call, a host-to-device copy that capture also
-  refuses (``copy_between_host_and_device_opapi``, 107030).
-
-Both are replaceable bit-exactly -- the selected rows are a pure function of the
-``video_spans`` Python ints, and the second is the same tensor built one step
-earlier -- so this module patches them in place rather than waiting on the
-upstream fix. It is deliberately conservative: it verifies every symbol it
-expects before touching anything, and a mismatch leaves MindIE-SD alone and
-disables itself, because a wrong permutation would corrupt output silently.
-
-Applied only when head-overlap graph capture is switched on.
+The stock permutation uses boolean indexing, and the mask builder copies
+protected block indices from the host. Both depend only on the packed video
+layout, so they can be prepared once before capture.
 """
 
 from __future__ import annotations
+
+from functools import lru_cache
 
 import torch
 from vllm.logger import init_logger
@@ -37,7 +21,7 @@ _FAILED = False
 
 
 def ensure_rf_capture_patch() -> bool:
-    """Patch MindIE-SD's rf_v2 multi-video preprocessing. Idempotent.
+    """Patch MindIE-SD's multi-video preprocessing. Idempotent.
 
     Returns True once the patch is in place, False when it could not be applied
     (in which case callers keep working -- capture simply stays unavailable for
@@ -52,77 +36,45 @@ def ensure_rf_capture_patch() -> bool:
     try:
         import mindiesd.layers.flash_attn.sparse_flash_attn as sparse_entry
         import mindiesd.layers.flash_attn.sparse_flash_attn_rf_v2 as rf_v2
+        import mindiesd.layers.flash_attn.sparse_flash_attn_rf_v3 as rf_v3
     except Exception as exc:  # noqa: BLE001 - absent MindIE-SD must not break the caller
         _FAILED = True
         logger.warning("rf capture patch skipped: cannot import MindIE-SD sparse attention (%s)", exc)
         return False
 
-    required = ("_multi_span_plan", "_span_rearranged_indices", "get_mask_index", "_multi_span_permutation")
-    missing = [name for name in required if not hasattr(rf_v2, name)]
-    if missing:
+    permutation = getattr(rf_v2, "_multi_span_permutation", None)
+    mask = getattr(rf_v2, "get_multi_span_blockwise_mask", None)
+    if (
+        not callable(permutation)
+        or not callable(mask)
+        or not callable(getattr(rf_v2, "get_mask_index", None))
+        or getattr(sparse_entry, "get_multi_span_blockwise_mask", None) is not mask
+        or getattr(rf_v3, "get_multi_span_blockwise_mask", None) is not mask
+    ):
         _FAILED = True
-        logger.warning(
-            "rf capture patch skipped: this MindIE-SD build has no %s (expected on 3.1.0); "
-            "the multi-video path stays uncapturable.",
-            ", ".join(missing),
-        )
+        logger.warning("rf capture patch skipped: MindIE-SD does not expose the expected RFv2/RFv3 helpers")
         return False
 
-    try:
-        rf_v2._multi_span_permutation = _make_multi_span_permutation(rf_v2)
-        patched_mask = _make_span_blockwise_mask(rf_v2)
-        rf_v2.get_multi_span_blockwise_mask = patched_mask
-        # sparse_attention binds this name with `from ... import`, so the caller's
-        # reference has to be replaced too or the patch silently does nothing.
-        sparse_entry.get_multi_span_blockwise_mask = patched_mask
-    except Exception as exc:  # noqa: BLE001
-        _FAILED = True
-        logger.warning("rf capture patch failed (%s: %s); leaving MindIE-SD untouched", type(exc).__name__, exc)
-        return False
+    # The two callers import the mask helper by name. The permutation is read
+    # directly from the RFv2 module by the shared pooling helper.
+    patched_mask = _make_span_blockwise_mask(rf_v2)
+    rf_v2._multi_span_permutation = _cache_multi_span_permutation(permutation)
+    rf_v2.get_multi_span_blockwise_mask = patched_mask
+    sparse_entry.get_multi_span_blockwise_mask = patched_mask
+    rf_v3.get_multi_span_blockwise_mask = patched_mask
 
     _PATCHED = True
-    logger.info(
-        "rf capture patch applied: MindIE-SD's multi-video permutation uses a closed-form dense-row "
-        "gather instead of boolean indexing, and caches its retained-block index tensor"
-    )
+    logger.info("rf capture patch applied: RFv2/RFv3 cache video permutations and protected block indices")
     return True
 
 
-def _make_multi_span_permutation(rf_v2):
-    """Closed form for ``all_indices[~is_video]``: the spans' complement, ascending."""
-    plan = rf_v2._multi_span_plan
-    span_indices = rf_v2._span_rearranged_indices
+def _cache_multi_span_permutation(permutation):
+    """Reuse the original permutation for the same layout and device."""
+    cached = lru_cache(maxsize=32)(permutation)
 
     def _multi_span_permutation(spans, sequence_len, pool_size, input_layout, device):
-        segments, dense_blocks, first_frame_blocks = plan(spans, sequence_len, pool_size)
-
-        gaps: list[tuple[int, int]] = []
-        cursor = 0
-        for start, _shape, length in spans:
-            if start > cursor:
-                gaps.append((cursor, start))
-            cursor = start + length
-        if cursor < sequence_len:
-            gaps.append((cursor, sequence_len))
-        dense_indices = (
-            torch.cat([torch.arange(lo, hi, device=device, dtype=torch.long) for lo, hi in gaps])
-            if gaps
-            else torch.empty(0, device=device, dtype=torch.long)
-        )
-
-        dense_cursor = 0
-        parts = []
-        for segment in segments:
-            if segment[0] == "clip":
-                parts.append(span_indices(segment[1], segment[2], input_layout, device))
-            else:
-                parts.append(dense_indices[dense_cursor : dense_cursor + segment[1]])
-                dense_cursor += segment[1]
-
-        permutation = torch.cat(parts)
-        inverse = torch.empty_like(permutation)
-        inverse[permutation] = torch.arange(sequence_len, device=device, dtype=torch.long)
-        return permutation, inverse, dense_blocks, first_frame_blocks
+        geometry = tuple((start, tuple(shape), length) for start, shape, length in spans)
+        return cached(geometry, sequence_len, pool_size, input_layout, device)
 
     return _multi_span_permutation
 

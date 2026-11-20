@@ -626,7 +626,9 @@ class Attention(nn.Module):
             # backend has declared that phase uncapturable.
             phase = self._head_overlap_phase(attn_metadata)
             if phase >= 0:
-                graph_key = (tuple(query.shape), str(query.dtype), groups, phase)
+                # Equal padded shapes can still have different video spans.
+                video_layout = attn_metadata.video_layout if attn_metadata is not None else None
+                graph_key = (tuple(query.shape), str(query.dtype), groups, phase, video_layout)
                 replayed = cache.run(
                     graph_key,
                     (query, key, value),
