@@ -133,8 +133,22 @@ class _HeadOverlapRunner:
         supported = NPUExactGraphRunner.is_supported()
         if supported:
             try:
+                required = 8 * input_bytes + _CAPTURE_SAFETY_BYTES
                 free, _ = torch.npu.mem_get_info(device)
-                supported = free >= 8 * input_bytes + _CAPTURE_SAFETY_BYTES
+                if free < required:
+                    # The full refresh can leave idle eager allocations in the
+                    # device allocator immediately before the compact capture.
+                    torch.npu.empty_cache()
+                    free_after, _ = torch.npu.mem_get_info(device)
+                    logger.info(
+                        "H3 head overlap NPUGraph admission phase=%s: free_before=%d free_after=%d required=%d bytes",
+                        signature[0],
+                        free,
+                        free_after,
+                        required,
+                    )
+                    free = free_after
+                supported = free >= required
             except (RuntimeError, TypeError):
                 supported = False
 

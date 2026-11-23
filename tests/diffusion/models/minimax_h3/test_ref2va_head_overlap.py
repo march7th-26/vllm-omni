@@ -114,6 +114,25 @@ def test_peer_rejection_falls_back_before_reading_reference(overlap, monkeypatch
     overlap.dist.all_gather_object.assert_called_once()
 
 
+@pytest.mark.parametrize("free_after, admitted", [(10 * 2**30, True), (7 * 2**30, False)])
+def test_capture_admission_reclaims_idle_cache_without_lowering_headroom(
+    overlap, monkeypatch, mocker, free_after, admitted
+):
+    runner = overlap._HeadOverlapRunner(object(), 2, 7)
+    npu = SimpleNamespace(
+        mem_get_info=mocker.Mock(side_effect=[(7 * 2**30, 96 * 2**30), (free_after, 96 * 2**30)]),
+        empty_cache=mocker.Mock(),
+    )
+    monkeypatch.setattr(torch, "npu", npu, raising=False)
+    overlap.dist.all_gather_object.side_effect = lambda values, proposal, **_: values.__setitem__(
+        slice(None), [proposal, proposal]
+    )
+
+    assert runner._admit_capture(("compact",), torch.device("cpu"), 2**28) is admitted
+    npu.empty_cache.assert_called_once_with()
+    assert npu.mem_get_info.call_count == 2
+
+
 def test_shared_graph_uses_each_layers_reference_and_keys_on_layout(overlap, monkeypatch, mocker):
     runner = overlap._HeadOverlapRunner(object(), 2, 2)
     monkeypatch.setattr(runner, "_admit_capture", lambda *args: True)
