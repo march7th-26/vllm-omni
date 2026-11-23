@@ -153,3 +153,86 @@ def test_graph_capture_error_does_not_run_a_second_transport(overlap, monkeypatc
 
     take_reference.assert_called_once_with()
     grouped_forward.assert_called_once()
+
+
+def test_full_overlap_gathers_rank_local_reference_heads_in_order(overlap, monkeypatch, mocker):
+    world, groups = 4, 7
+    stream = mocker.Mock()
+    monkeypatch.setattr(
+        torch,
+        "npu",
+        SimpleNamespace(
+            Stream=lambda **kwargs: stream,
+            Event=mocker.Mock,
+            current_stream=lambda device: stream,
+            stream=lambda _: nullcontext(),
+        ),
+        raising=False,
+    )
+    monkeypatch.setattr(torch.Tensor, "record_stream", lambda *_: None)
+    runner = overlap._HeadOverlapRunner(object(), world, groups)
+    active = torch.arange(2 * 56).reshape(1, 2, 56, 1)
+    positions = torch.tensor([1, 2, 5])
+
+    class RankZero:
+        def pre_attention(self, q, k, v, metadata):
+            return (*(tensor.chunk(world, dim=2)[0].repeat(1, world, 1, 1) for tensor in (q, k, v)), metadata, None)
+
+        def post_attention(self, output, ctx):
+            return torch.cat((output[:, :2], torch.zeros_like(output[:, :2]).repeat(1, 1, 3, 1)), dim=2)
+
+    write_reference = mocker.Mock()
+    output = runner.run(
+        RankZero(),
+        (active, active + 1, active + 2),
+        None,
+        len(positions),
+        0,
+        (),
+        lambda q, k, v: q,
+        graph=False,
+        reference_positions=positions,
+        write_reference=write_reference,
+    )
+    write_reference.assert_called_once()
+    key, value = write_reference.call_args.args
+    expected = active[0].repeat(world, 1, 1).index_select(0, positions)[:, :14]
+    torch.testing.assert_close(key, expected + 1)
+    torch.testing.assert_close(value, expected + 2)
+    torch.testing.assert_close(output[:, :, :14], active[:, :, :14])
+
+
+def test_full_graph_capture_registers_once_and_replay_takes_current_positions(overlap, monkeypatch, mocker):
+    runner = overlap._HeadOverlapRunner(object(), 2, 2)
+    monkeypatch.setattr(runner, "_admit_capture", lambda *args: True)
+
+    def run(strategy, world, groups, padding, attention, q, k, v, positions):
+        return q, k[0].index_select(0, positions), v[0].index_select(0, positions)
+
+    def capture(inputs, compute):
+        compute(*inputs)
+        return SimpleNamespace(replay=lambda values: compute(*values))
+
+    monkeypatch.setattr(overlap, "_OverlapStreams", lambda *args: SimpleNamespace(run=run))
+    runner._capture.capture.side_effect = capture
+    q = torch.arange(12).reshape(1, 3, 4, 1)
+    write_reference = mocker.Mock()
+    for row in (0, 2):
+        runner.run(
+            object(),
+            (q, q + 1, q + 2),
+            None,
+            1,
+            0,
+            (),
+            mocker.Mock(),
+            graph=True,
+            reference_positions=torch.tensor([row]),
+            write_reference=write_reference,
+        )
+        key, value = write_reference.call_args.args
+        torch.testing.assert_close(key, q[0, row : row + 1] + 1)
+        torch.testing.assert_close(value, q[0, row : row + 1] + 2)
+    assert write_reference.call_count == 2
+    runner._capture.capture.assert_called_once()
+    assert overlap.logger.info_once.call_args.kwargs["scope"] == "process"

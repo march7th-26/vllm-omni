@@ -841,6 +841,7 @@ class _DiffusionConfigProjection(_TrackExplicitConfigFields):
     diffusion_attention_schedule: Any = None
     diffusion_attn_head_overlap: int = 0
     diffusion_attn_head_overlap_graph: bool = False
+    diffusion_attn_head_overlap_scope: str = "compact"
     cache_strategy: str = "none"
     cache_backend: str = "none"
     cache_config: Any = field(default_factory=dict)

@@ -160,6 +160,36 @@ def native_mix(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Te
     return out.transpose(1, 2).contiguous()
 
 
+def rank_blocks(
+    query_pool: torch.Tensor, key_pool: torch.Tensor, sparsity: float, scale: float
+) -> tuple[torch.Tensor, torch.Tensor]:
+    scores = torch.einsum("blnd,bsnd->bnls", query_pool, key_pool) * scale
+    probs = torch.nn.functional.softmax(scores, dim=-1)
+    keep = max(1, math.ceil(probs.shape[-1] * (1 - sparsity)))
+    threshold = torch.topk(probs, k=keep, dim=-1).values[..., -1:]
+    return scores, probs >= threshold
+
+
+def apply_image_sparsity(
+    scores: torch.Tensor,
+    mask: torch.Tensor,
+    rows: torch.Tensor,
+    image_groups: tuple[torch.Tensor, ...],
+    image_sparsity: float,
+) -> None:
+    # Match RF-v3: only complete image columns on eligible rows are
+    # overwritten, using the original scores before softmax.
+    if image_sparsity <= 0 or not rows.numel():
+        return
+    for columns in image_groups:
+        values = scores.index_select(-2, rows).index_select(-1, columns)
+        keep = max(1, math.ceil(columns.numel() * (1 - image_sparsity)))
+        selected = values.topk(keep, dim=-1).indices
+        mask[..., rows[:, None], columns[None, :]] = torch.zeros_like(values, dtype=torch.bool).scatter_(
+            -1, selected, True
+        )
+
+
 def run(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -193,24 +223,10 @@ def run(
         qs = q.index_select(1, plan.sparse_indices)
         qp = avgpool(qs, 128, "BSND")
         kp = avgpool(kr, 128, "BSND")
-        scores = torch.einsum("blnd,bsnd->bnls", qp, kp) * scale
-        probs = torch.nn.functional.softmax(scores, dim=-1)
-        keep = max(1, math.ceil(probs.shape[-1] * (1 - sparsity)))
-        threshold = torch.topk(probs, k=keep, dim=-1).values[..., -1:]
-        mask = probs >= threshold
+        scores, mask = rank_blocks(qp, kp, sparsity, scale)
         if plan.protected_keys.numel():
             mask[:, :, :, plan.protected_keys] = True
-        # Match RF-v3: overwrite just the complete image columns on eligible
-        # query blocks, ranking by the original Q/K scores before softmax.
-        rows = plan.image_query_blocks
-        if image_sparsity > 0 and rows.numel():
-            for columns in plan.image_groups:
-                values = scores.index_select(-2, rows).index_select(-1, columns)
-                keep = max(1, math.ceil(columns.numel() * (1 - image_sparsity)))
-                selected = values.topk(keep, dim=-1).indices
-                mask[..., rows[:, None], columns[None, :]] = torch.zeros_like(values, dtype=torch.bool).scatter_(
-                    -1, selected, True
-                )
+        apply_image_sparsity(scores, mask, plan.image_query_blocks, plan.image_groups, image_sparsity)
         ys = native(qs, kr, vr, mask.to(torch.int8), scale)
         out.index_copy_(1, plan.sparse_indices, ys)
     if plan.dense_rows:

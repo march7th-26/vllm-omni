@@ -100,6 +100,15 @@ time, end-to-end latency and peak device memory against the same request
 with both flags omitted. A5 graph compatibility and throughput require
 device validation.
 
+To also group full-length refresh steps, add
+`--diffusion-attn-head-overlap-scope full-and-compact`. With 56 heads on
+USP4, a group count of seven gives two heads per rank per group. Full and
+compact captures have separate graph keys and log their phase on every
+worker. The full graph returns only the reference rows for the ordinary
+rank-local head shard. The request records the layer's resident K/V after
+the graph completes. RainFusion uses precomputed multi-span indices with
+the same RF-v3 scoring, per-image selection and Eagle mix kernel.
+
 ## Recommended eight-step LoRA configuration
 
 For eight-step Ref2VA, prepare the

@@ -864,19 +864,46 @@ class MiniMaxH3ReferenceKVResidentState(MiniMaxH3ReferenceKVTier2State):
             raise ValueError("resident cache requires matching [1,S,H,D] K/V")
         if self._global_sequence_rows != int(key.shape[1]):
             raise ValueError("resident sequence layout changed")
-        if self.host_quantization != "none":
-            raise ValueError("resident cache requires unquantized storage")
-        shape = (self.num_layers, 2, self.global_reference_rows, *key.shape[2:])
-        if self._host_pool is None:
-            self._host_pool = torch.empty(shape, device=key.device, dtype=key.dtype)
-        if tuple(self._host_pool.shape) != shape or self._host_pool.dtype != key.dtype:
-            raise ValueError("resident cache layout changed")
+        layer_k, layer_v = self._capture_destination(layer_index, key.shape[2:], key)
         positions = self.global_reference_positions
         with record_function("minimax_h3.ref_kv_resident.capture_direct"):
-            torch.index_select(key[0], 0, positions, out=self._host_pool[layer_index, 0])
-            torch.index_select(value[0], 0, positions, out=self._host_pool[layer_index, 1])
+            torch.index_select(key[0], 0, positions, out=layer_k)
+            torch.index_select(value[0], 0, positions, out=layer_v)
+        self._mark_reference_captured(layer_index)
+
+    def _capture_destination(
+        self, layer_index: int, head_shape: tuple[int, ...], like: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if self.host_quantization != "none":
+            raise ValueError("resident cache requires unquantized storage")
+        shape = (self.num_layers, 2, self.global_reference_rows, *head_shape)
+        if self._host_pool is None:
+            self._host_pool = torch.empty(shape, device=like.device, dtype=like.dtype)
+        if (
+            tuple(self._host_pool.shape) != shape
+            or self._host_pool.dtype != like.dtype
+            or self._host_pool.device != like.device
+        ):
+            raise ValueError("resident cache layout changed")
+        return self._host_pool[layer_index, 0], self._host_pool[layer_index, 1]
+
+    def _mark_reference_captured(self, layer_index: int) -> None:
         self.stats.captured_layers += 1
         self._layers_seen.add(layer_index)
+
+    def capture_gathered_reference(self, layer_index: int, key: torch.Tensor, value: torch.Tensor) -> None:
+        """Store the reference rows returned by full grouped Ulysses."""
+        if self._step is None or not self._refresh or not 0 <= layer_index < self.num_layers:
+            raise RuntimeError("grouped reference KV capture requires an active refresh layer")
+        if layer_index in self._layers_seen:
+            raise RuntimeError(f"MiniMax-H3 layer {layer_index} processed twice in step {self._step}")
+        if key.shape != value.shape or key.ndim != 3 or key.shape[0] != self.global_reference_rows:
+            raise ValueError("grouped resident cache requires matching reference [S,H,D] K/V")
+        layer_k, layer_v = self._capture_destination(layer_index, key.shape[1:], key)
+        with record_function("minimax_h3.ref_kv_resident.capture_grouped"):
+            layer_k.copy_(key)
+            layer_v.copy_(value)
+        self._mark_reference_captured(layer_index)
 
     def take_cached_reference_layer(self, layer_index: int, like: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if self._step is None or self._global_refresh:

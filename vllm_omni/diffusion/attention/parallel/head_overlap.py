@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
-"""Stream grouped Ulysses for MiniMax-H3 resident short-Q attention."""
+"""Stream grouped Ulysses for MiniMax-H3 resident reference-KV attention."""
 
 from __future__ import annotations
 
@@ -28,9 +28,7 @@ _MAX_GRAPHS = 4
 # The graph retains copies, communication buffers and the rectangular mask.
 # Match the source experiment's conservative capture headroom.
 _CAPTURE_SAFETY_BYTES = 6 * 2**30
-_GRAPH_FAILURE = (
-    "H3 short-Q head overlap NPUGraph failed. Restart the worker without --diffusion-attn-head-overlap-graph."
-)
+_GRAPH_FAILURE = "H3 head overlap NPUGraph failed. Restart the worker without --diffusion-attn-head-overlap-graph."
 
 
 def _group_heads(tensor: torch.Tensor, world: int, groups: int) -> tuple[torch.Tensor, ...]:
@@ -63,8 +61,8 @@ class _OverlapStreams:
         key: torch.Tensor,
         value: torch.Tensor,
         reference_k: torch.Tensor,
-        reference_v: torch.Tensor,
-    ) -> tuple[torch.Tensor]:
+        reference_v: torch.Tensor | None = None,
+    ) -> Inputs:
         npu = torch.npu
         compute = npu.current_stream(query.device)
         comm = self.comm
@@ -82,15 +80,22 @@ class _OverlapStreams:
                 self.ready[index].record(comm)
                 prepared.append((q, k, v, ctx))
 
-        ref_keys = reference_k.chunk(groups, dim=1)
-        ref_values = reference_v.chunk(groups, dim=1)
-        pieces = []
+        if reference_v is not None:
+            ref_keys = reference_k.chunk(groups, dim=1)
+            ref_values = reference_v.chunk(groups, dim=1)
+        gathered_keys, gathered_values, pieces = [], [], []
         for index, (q, k, v, ctx) in enumerate(prepared):
             compute.wait_event(self.ready[index])
             if padding:
                 q, k, v = strip_qkv(q, k, v, q.shape[1] - padding, padding)
-            k = torch.cat((ref_keys[index].unsqueeze(0), k), dim=1)
-            v = torch.cat((ref_values[index].unsqueeze(0), v), dim=1)
+            if reference_v is None:
+                # The third graph mode input is the request's reference row
+                # index. Return these rows in the original rank's head order.
+                gathered_keys.append(k[0].index_select(0, reference_k))
+                gathered_values.append(v[0].index_select(0, reference_k))
+            else:
+                k = torch.cat((ref_keys[index].unsqueeze(0), k), dim=1)
+                v = torch.cat((ref_values[index].unsqueeze(0), v), dim=1)
             out = append_rows(attention(q, k, v), padding, 1)
             self.computed[index].record(compute)
             with npu.stream(comm):
@@ -105,7 +110,10 @@ class _OverlapStreams:
             compute.wait_event(event)
         for piece in pieces:
             piece.record_stream(compute)
-        return (_restore_heads(pieces, world),)
+        output = _restore_heads(pieces, world)
+        if reference_v is None:
+            return output, torch.cat(gathered_keys, dim=1), torch.cat(gathered_values, dim=1)
+        return (output,)
 
 
 class _HeadOverlapRunner:
@@ -116,7 +124,7 @@ class _HeadOverlapRunner:
         self._capture_closed = False
         self._graph_failed = False
         self._eager_streams: _OverlapStreams | None = None
-        self._capture = NPUExactGraphRunner(component_name="H3 short-Q head overlap")
+        self._capture = NPUExactGraphRunner(component_name="H3 head overlap")
         # Keep the callable alive alongside the graph: it owns the streams,
         # events and RainFusion plan tensors referenced by captured kernels.
         self._graphs: dict[tuple[object, ...], tuple[CapturedDeviceGraph, Callable[..., Inputs]]] = {}
@@ -138,7 +146,7 @@ class _HeadOverlapRunner:
         dist.all_gather_object(admissions, proposal, group=self.cpu_group)
         if not supported or any(admission != proposal for admission in admissions):
             self._capture_closed = True
-            logger.warning_once("H3 short-Q head overlap graph unavailable; using ordinary Ulysses")
+            logger.warning_once("H3 head overlap graph unavailable; using ordinary Ulysses")
             return False
         return True
 
@@ -159,48 +167,71 @@ class _HeadOverlapRunner:
         self,
         strategy: UlyssesParallelAttention,
         active_qkv: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-        take_reference: ReferenceKV,
+        take_reference: ReferenceKV | None,
         reference_rows: int,
         padding: int,
         geometry: tuple[object, ...],
         attention: AttentionFn,
         *,
         graph: bool,
+        reference_positions: torch.Tensor | None = None,
+        write_reference: Callable[[torch.Tensor, torch.Tensor], None] | None = None,
     ) -> torch.Tensor | None:
         query = active_qkv[0]
+        phase = "compact" if reference_positions is None else "full"
+        if phase == "full":
+            assert reference_positions is not None and reference_positions.shape == (reference_rows,)
+            assert write_reference is not None and take_reference is None and padding == 0
+        else:
+            assert take_reference is not None and write_reference is None
+
+        def current_inputs() -> Inputs:
+            if reference_positions is not None:
+                return (*active_qkv, reference_positions)
+            assert take_reference is not None
+            return self._inputs(active_qkv, take_reference, reference_rows)
+
+        def finish(outputs: Inputs) -> torch.Tensor:
+            if write_reference is not None:
+                # The request-local pool and layer accounting stay out of
+                # capture. Warmup plus capture must register the layer once.
+                write_reference(outputs[1], outputs[2])
+            return outputs[0]
+
         if not graph:
             if self._eager_streams is None:
                 self._eager_streams = _OverlapStreams(query.device, self.groups)
-                logger.info("H3 short-Q eager head overlap active with %d groups", self.groups)
-            return self._eager_streams.run(
-                strategy,
-                self.world,
-                self.groups,
-                padding,
-                attention,
-                *self._inputs(active_qkv, take_reference, reference_rows),
-            )[0]
+            logger.info_once("H3 head overlap eager phase=%s groups=%d", phase, self.groups, scope="process")
+            return finish(
+                self._eager_streams.run(strategy, self.world, self.groups, padding, attention, *current_inputs())
+            )
 
         if self._graph_failed:
             raise RuntimeError(_GRAPH_FAILURE)
-        signature = (tuple(query.shape), str(query.dtype), padding, geometry)
+        signature = (phase, tuple(query.shape), str(query.dtype), reference_rows, padding, geometry)
         if NPUExactGraphRunner._stream_is_capturing():
             return None
         entry = self._graphs.get(signature)
         if entry is not None:
             captured, _ = entry
-            logger.info_once("H3 short-Q head overlap NPUGraph replay active with %d groups", self.groups)
-            inputs = self._inputs(active_qkv, take_reference, reference_rows)
+            inputs = current_inputs()
             try:
-                return captured.replay(inputs)[0]
+                outputs = captured.replay(inputs)
             except RuntimeError as exc:
                 self._graph_failed = True
                 raise RuntimeError(_GRAPH_FAILURE) from exc
+            result = finish(outputs)
+            logger.info_once(
+                "H3 head overlap NPUGraph replay active phase=%s groups=%d", phase, self.groups, scope="process"
+            )
+            return result
         if self._capture_closed:
             return None
         if len(self._graphs) >= _MAX_GRAPHS:
-            logger.info_once("H3 short-Q head overlap reached its graph limit; new layouts use ordinary Ulysses")
+            logger.info_once("H3 head overlap reached its graph limit; new layouts use ordinary Ulysses")
             return None
+        # Account for the resident heads in either the compact graph inputs
+        # or the full graph outputs.
         reference_elements = 2 * reference_rows * (query.shape[2] // self.world) * query.shape[3]
         input_bytes = (3 * query.numel() + reference_elements) * query.element_size()
         if not self._admit_capture(signature, query.device, input_bytes):
@@ -208,12 +239,11 @@ class _HeadOverlapRunner:
 
         streams = _OverlapStreams(query.device, self.groups)
 
-        def compute(*inputs: torch.Tensor) -> tuple[torch.Tensor]:
-            q, k, v, ref_k, ref_v = inputs
-            return streams.run(strategy, self.world, self.groups, padding, attention, q, k, v, ref_k, ref_v)
+        def compute(*inputs: torch.Tensor) -> Inputs:
+            return streams.run(strategy, self.world, self.groups, padding, attention, *inputs)
 
-        inputs = self._inputs(active_qkv, take_reference, reference_rows)
-        eager = compute(*inputs)[0]  # Prime lazy operators before capture.
+        inputs = current_inputs()
+        eager = compute(*inputs)  # Prime lazy operators before capture.
         try:
             captured = self._capture.capture(inputs, compute)
         except RuntimeError as exc:
@@ -222,8 +252,8 @@ class _HeadOverlapRunner:
             self._graph_failed = True
             raise RuntimeError(_GRAPH_FAILURE) from exc
         self._graphs[signature] = (captured, compute)
-        logger.info("H3 short-Q head overlap captured NPUGraph %d/%d", len(self._graphs), _MAX_GRAPHS)
-        return eager
+        logger.info("H3 head overlap captured NPUGraph phase=%s groups=%d", phase, self.groups)
+        return finish(eager)
 
 
 @cache

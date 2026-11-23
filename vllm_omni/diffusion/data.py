@@ -874,6 +874,7 @@ class OmniDiffusionConfig:
     diffusion_attention_schedule: "AttentionScheduleConfig | None" = None
     diffusion_attn_head_overlap: int = 0
     diffusion_attn_head_overlap_graph: bool = False
+    diffusion_attn_head_overlap_scope: str = "compact"
     fa_deterministic: bool = False
     # Run the positive and negative CFG branches as one batched denoiser call
     # when CFG is not split across ranks. Only pipelines that declare
@@ -1434,6 +1435,8 @@ class OmniDiffusionConfig:
             raise ValueError("diffusion_attn_head_overlap_graph must be a boolean")
         if self.diffusion_attn_head_overlap_graph and groups < 2:
             raise ValueError("diffusion_attn_head_overlap_graph requires at least two head groups")
+        if self.diffusion_attn_head_overlap_scope not in ("compact", "full-and-compact"):
+            raise ValueError("diffusion_attn_head_overlap_scope must be compact or full-and-compact")
 
         if self.diffusion_compile_granularity == "full":
             incompatible_features = []

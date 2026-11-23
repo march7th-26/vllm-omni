@@ -547,6 +547,7 @@ class Attention(nn.Module):
         config = get_current_diffusion_config_or_none()
         self._head_overlap_groups = getattr(config, "diffusion_attn_head_overlap", 0)
         self._head_overlap_graph = getattr(config, "diffusion_attn_head_overlap_graph", False)
+        self._head_overlap_scope = getattr(config, "diffusion_attn_head_overlap_scope", "compact")
         attention_config = config.diffusion_attention_config if config is not None else None
         parallel_config = getattr(config, "parallel_config", None)
         self._hsdp_compile_boundary_enabled = bool(getattr(parallel_config, "use_hsdp", False))
@@ -945,6 +946,10 @@ class Attention(nn.Module):
             and getattr(self, "_head_overlap_groups", 0) > 1
             and attn_metadata is not None
             and attn_metadata.extra.get("minimax_h3_resident_reference_kv")
+            and (
+                attn_metadata.extra.get("minimax_h3_compact_reference_rows")
+                or self._head_overlap_scope == "full-and-compact"
+            )
         ):
             # Keep stream/graph orchestration outside the compiled DiT block.
             return self._forward_schedule_compile_boundary(query, key, value, attn_metadata)
@@ -1141,7 +1146,7 @@ class Attention(nn.Module):
                 raise NotImplementedError("paged Scheduler KV currently supports only strict Ulysses")
 
         if getattr(self, "_head_overlap_groups", 0) > 1 and not use_paged_attention:
-            overlapped = self._try_compact_head_overlap(query, key, value, attn_metadata, strategy)
+            overlapped = self._try_h3_head_overlap(query, key, value, attn_metadata, strategy)
             if overlapped is not None:
                 return overlapped
 
@@ -1256,7 +1261,7 @@ class Attention(nn.Module):
 
         return out
 
-    def _try_compact_head_overlap(
+    def _try_h3_head_overlap(
         self,
         query: torch.Tensor,
         key: torch.Tensor,
@@ -1280,20 +1285,24 @@ class Attention(nn.Module):
         ):
             return None
         extra = metadata.extra
-        reference_rows = int(extra.get("minimax_h3_compact_reference_rows", 0))
         post_parallel_ref = extra.get("minimax_h3_reference_kv_post_parallel")
         if (
-            reference_rows <= 0
-            or not extra.get("minimax_h3_resident_reference_kv")
+            not extra.get("minimax_h3_resident_reference_kv")
             or not isinstance(post_parallel_ref, tuple)
             or len(post_parallel_ref) != 3
-            or not post_parallel_ref[2]
             or "gate_compress" in extra
             or metadata.joint_query is not None
             or metadata.joint_key is not None
             or metadata.joint_value is not None
             or metadata.joint_attn_mask is not None
         ):
+            return None
+
+        state, layer_index, compact = post_parallel_ref
+        if not compact and self._head_overlap_scope != "full-and-compact":
+            return None
+        reference_rows = state.global_reference_rows
+        if compact and reference_rows != int(extra.get("minimax_h3_compact_reference_rows", 0)):
             return None
 
         from vllm_omni.diffusion.attention.backends.rainfusion_attn import RainFusionAttentionImpl
@@ -1312,7 +1321,7 @@ class Attention(nn.Module):
         query_rows = query.shape[1] * world
         if alignment_layout is not None and query_rows != alignment_layout["compact_rows"] + padding:
             return None
-        if int(extra["max_seqlen_q"]) > query_rows - padding:
+        if int(extra["max_seqlen_q"]) > query_rows - padding or (padding and not compact):
             return None
 
         effective_impl, _, _ = self.effective_attention()
@@ -1320,24 +1329,28 @@ class Attention(nn.Module):
             return None
         metadata = self._with_kv_cache_dtype(metadata)
         assert metadata is not None
-        prepared = effective_impl.prepare_compact_head_overlap(metadata, reference_rows, query.device)
+        if compact:
+            prepared = effective_impl.prepare_compact_head_overlap(metadata, reference_rows, query.device)
+        else:
+            prepared = effective_impl.prepare_full_head_overlap(metadata, query.device, query_rows)
         if prepared is None:
             return None
         geometry, attention = prepared
 
         from vllm_omni.diffusion.attention.parallel.head_overlap import get_head_overlap_runner
 
-        state, layer_index, _ = post_parallel_ref
         runner = get_head_overlap_runner(cpu_group, world, groups)
         return runner.run(
             strategy,
             (query, key, value),
-            functools.partial(state.take_cached_reference_layer, int(layer_index), key),
+            functools.partial(state.take_cached_reference_layer, int(layer_index), key) if compact else None,
             reference_rows,
             padding,
             geometry,
             attention,
             graph=self._head_overlap_graph,
+            reference_positions=None if compact else state.global_reference_positions,
+            write_reference=None if compact else functools.partial(state.capture_gathered_reference, int(layer_index)),
         )
 
     def _validate_cross_inputs(

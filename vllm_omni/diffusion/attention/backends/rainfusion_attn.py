@@ -385,6 +385,35 @@ class RainFusionAttentionImpl(AttentionImpl):
         plan = self._resolve_plan(sparse_metadata)
         return plan, sparse_metadata, image_layout
 
+    def prepare_full_head_overlap(
+        self, metadata: AttentionMetadata, device: torch.device, rows: int
+    ) -> tuple[tuple[object, ...], Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]] | None:
+        """Resolve the same full-length RF-v3 mix geometry as ordinary Ulysses."""
+        if self.qkv_layout != _INPUT_LAYOUT or self.rainfusion.precision != "mix" or "kv_cache_dtype" in metadata.extra:
+            return None
+        plan = self._resolve_plan(metadata)
+        if plan is None or not plan.video_spans or plan.used_len > rows:
+            return None
+
+        from mindiesd.utils.get_platform import is_a5_device
+
+        if not is_a5_device():
+            return None
+        from vllm_omni.diffusion.attention.ops.rainfusion_full import get_full_plan, run_full
+
+        def spans(entries):
+            return tuple((cast(int, span["start"]), tuple(cast(list[int], span["latent_shape"]))) for span in entries)
+
+        video_spans = spans(plan.video_spans)
+        image_spans = spans(plan.image_spans or ())
+        full_plan = get_full_plan(plan.used_len, video_spans, image_spans, str(device))
+        sparsity, scale, image_sparsity = self.rainfusion.sparsity, self.softmax_scale, self.rainfusion.image_sparsity
+
+        def compute(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+            return run_full(q, k, v, full_plan, sparsity, scale, image_sparsity)
+
+        return (plan.used_len, video_spans, image_spans, sparsity, scale, image_sparsity), compute
+
     def prepare_compact_head_overlap(
         self, metadata: AttentionMetadata, reference_rows: int, device: torch.device
     ) -> tuple[tuple[object, ...], Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]] | None:

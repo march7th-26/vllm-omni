@@ -907,8 +907,15 @@ class OmniServeCommand(CLISubcommand):
             "--diffusion-attn-head-overlap-graph",
             action="store_true",
             default=None,
-            help="Capture the short-Q head overlap in an NPUGraph. "
+            help="Capture the selected head overlap in an NPUGraph. "
             "If capture is unavailable, use ordinary ungrouped Ulysses.",
+        )
+
+        omni_config_group.add_argument(
+            "--diffusion-attn-head-overlap-scope",
+            choices=("compact", "full-and-compact"),
+            default=None,
+            help="Run MiniMax-H3 overlap on short-Q reuse steps (default), or also on full-length refresh steps.",
         )
 
         omni_config_group.add_argument(

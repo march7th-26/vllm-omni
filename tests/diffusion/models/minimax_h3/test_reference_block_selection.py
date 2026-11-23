@@ -327,7 +327,7 @@ def test_rectangular_image_mask_and_cached_row_mapping(geometry, monkeypatch, mo
     rectangular = definitions(
         "_rbs_rectangular",
         "vllm_omni/diffusion/attention/ops/rainfusion_rectangular.py",
-        {"Plan", "get_plan", "run"},
+        {"Plan", "get_plan", "rank_blocks", "apply_image_sparsity", "run"},
         {
             "dataclass": dataclasses.dataclass,
             "lru_cache": functools.lru_cache,
