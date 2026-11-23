@@ -77,6 +77,29 @@ supports BF16 and mix. Mix uses the existing MindIE-SD Q/K INT8 and V FP8
 quantization functions and operator; cached KV and outputs remain BF16. Other precision and backend
 combinations require separate compatibility validation.
 
+## Experiment with Ulysses head overlap
+
+With A5, strict Ulysses, NPU-resident reference KV and rectangular RainFusion
+`mix`, append these flags to the serve command:
+
+```bash
+--diffusion-attn-head-overlap 2 \
+--diffusion-attn-head-overlap-graph
+```
+
+The scheduler overlaps grouped All-to-All with attention on short-Q reuse
+steps. Full-length refresh steps keep the existing reference KV capture.
+With 56 heads and USP4, two groups put seven heads on each rank per group.
+The default group count is zero. Set a group count without the graph flag
+to debug eager overlap. In graph mode, unsupported layouts and rejected
+captures use ordinary Ulysses. A failure after capture starts may invalidate
+the worker's NPU runtime and requires a restart.
+
+The worker logs the first graph capture and replay. Compare short-Q step
+time, end-to-end latency and peak device memory against the same request
+with both flags omitted. A5 graph compatibility and throughput require
+device validation.
+
 ## Recommended eight-step LoRA configuration
 
 For eight-step Ref2VA, prepare the

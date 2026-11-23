@@ -301,78 +301,41 @@ class RainFusionAttentionImpl(AttentionImpl):
                 raise ValueError("RainFusion reference-KV reuse requires BSND layout")
             if key.shape != value.shape or key.shape[1] != query.shape[1] + reference_rows:
                 raise ValueError("RainFusion cached KV must be a reference prefix followed by target KV")
-            layout = attn_metadata.video_layout
-            image_layout = (
-                attn_metadata.extra.get("minimax_h3_reference_image_layout")
-                if self.rainfusion.image_sparsity > 0
-                else None
-            )
-            if image_layout is not None or (layout is not None and layout.video_spans):
-                used_q = int(attn_metadata.extra["max_seqlen_q"])
-                if layout is not None and layout.used_len != used_q:
-                    raise ValueError("compact RainFusion video layout must match valid target Q length")
-                used_kv = int(attn_metadata.extra["max_seqlen_k"])
-                if used_kv != used_q + reference_rows:
-                    raise ValueError("compact RainFusion valid KV length must include the reference prefix")
-                if image_layout is not None:
-                    kv_layout = image_layout.original
-                else:
-                    assert layout is not None
-                    kv_layout = attn_metadata.extra.get("minimax_h3_reference_kv_video_layout")
-                    if kv_layout is None:
-                        kv_layout = replace(
-                            layout,
-                            used_len=used_kv,
-                            video_spans=tuple(
-                                replace(span, start=span.start + reference_rows) for span in layout.video_spans
-                            ),
-                        )
-                if kv_layout.used_len != used_kv:
-                    raise ValueError("RainFusion reference KV video layout must match valid KV length")
-                sparse_metadata = replace(
-                    attn_metadata,
-                    packed_padding=None,
-                    extra={**attn_metadata.extra, "max_seqlen_q": used_kv},
-                    video_layout=kv_layout,
-                )
-                plan = self._resolve_plan(sparse_metadata)
-                if plan is not None:
-                    from mindiesd.utils.get_platform import is_a5_device
+            plan, sparse_metadata, image_layout = self._resolve_compact_plan(attn_metadata, reference_rows)
+            if plan is not None:
+                from mindiesd.utils.get_platform import is_a5_device
 
-                    precision = attn_metadata.extra.get("kv_cache_dtype", self.rainfusion.precision)
-                    if (
-                        is_a5_device()
-                        and precision in ("float", "bf16", "mix")
-                        and (attn_metadata.extra.get("minimax_h3_resident_reference_kv", False) or plan.image_spans)
-                    ):
-                        return self._forward_rectangular_npu(
-                            query, key, value, attn_metadata, plan, reference_rows, image_layout
-                        )
-                    if plan.image_spans:
-                        raise ValueError("rectangular reference-image sparsity requires A5 BF16 or mix")
-                    if self._can_use_hybrid(query, attn_metadata):
-                        assert layout is not None
-                        q_spans = tuple((span.start, tuple(span.latent_grid)) for span in layout.video_spans)
-                        return self._forward_hybrid_npu(
-                            query, key, value, attn_metadata, plan, reference_rows, q_spans=q_spans
-                        )
-                    # MindIE-SD's rf_v2 ABI requires equal Q/K/V sequence
-                    # lengths. Add dummy reference queries only after Ulysses;
-                    # their outputs are discarded, so no reference projection
-                    # or sequence-parallel exchange is reintroduced.
-                    logger.info_once(
-                        "RAINFUSION_ATTN reference-KV reuse active: reference_rows=%d, "
-                        "target_q_rows=%d, mode=padded_query; dummy reference outputs discarded.",
-                        reference_rows,
-                        used_q,
+                precision = attn_metadata.extra.get("kv_cache_dtype", self.rainfusion.precision)
+                if (
+                    is_a5_device()
+                    and precision in ("float", "bf16", "mix")
+                    and (attn_metadata.extra.get("minimax_h3_resident_reference_kv", False) or plan.image_spans)
+                ):
+                    return self._forward_rectangular_npu(
+                        query, key, value, attn_metadata, plan, reference_rows, image_layout
                     )
-                    dummy_q = query.new_zeros((query.shape[0], reference_rows, *query.shape[2:]))
-                    full_q = torch.cat((dummy_q, query), dim=1)
-                    return self._forward_sparse_npu(full_q, key, value, plan, sparse_metadata)[:, reference_rows:]
-            else:
-                logger.warning_once(
-                    "RAINFUSION_ATTN reference-KV reuse staying dense: no compatible compact video geometry."
+                if plan.image_spans:
+                    raise ValueError("rectangular reference-image sparsity requires A5 BF16 or mix")
+                if self._can_use_hybrid(query, attn_metadata):
+                    layout = attn_metadata.video_layout
+                    assert layout is not None
+                    q_spans = tuple((span.start, tuple(span.latent_grid)) for span in layout.video_spans)
+                    return self._forward_hybrid_npu(
+                        query, key, value, attn_metadata, plan, reference_rows, q_spans=q_spans
+                    )
+                # MindIE-SD's rf_v2 ABI requires equal Q/K/V sequence
+                # lengths. Add dummy reference queries only after Ulysses;
+                # their outputs are discarded, so no reference projection
+                # or sequence-parallel exchange is reintroduced.
+                logger.info_once(
+                    "RAINFUSION_ATTN reference-KV reuse active: reference_rows=%d, "
+                    "target_q_rows=%d, mode=padded_query; dummy reference outputs discarded.",
+                    reference_rows,
+                    attn_metadata.extra["max_seqlen_q"],
                 )
+                dummy_q = query.new_zeros((query.shape[0], reference_rows, *query.shape[2:]))
+                full_q = torch.cat((dummy_q, query), dim=1)
+                return self._forward_sparse_npu(full_q, key, value, plan, sparse_metadata)[:, reference_rows:]
             return self.dense_fallback.forward_npu(query, key, value, attn_metadata)
 
         plan = self._resolve_plan(attn_metadata)
@@ -381,6 +344,68 @@ class RainFusionAttentionImpl(AttentionImpl):
         if query.ndim != 4 or key.shape != query.shape or value.shape != query.shape or plan.used_len > query.shape[1]:
             raise ValueError("RainFusion video geometry must fit identical full-sequence BSND Q/K/V tensors.")
         return self._forward_sparse_npu(query, key, value, plan, attn_metadata)
+
+    def _resolve_compact_plan(
+        self, metadata: AttentionMetadata, reference_rows: int
+    ) -> tuple[RainFusionPlan | None, AttentionMetadata, ReferenceImageLayout | None]:
+        layout = metadata.video_layout
+        image_layout = (
+            metadata.extra.get("minimax_h3_reference_image_layout") if self.rainfusion.image_sparsity > 0 else None
+        )
+        if image_layout is None and (layout is None or not layout.video_spans):
+            logger.warning_once(
+                "RAINFUSION_ATTN reference-KV reuse staying dense: no compatible compact video geometry."
+            )
+            return None, metadata, None
+        used_q = int(metadata.extra["max_seqlen_q"])
+        if layout is not None and layout.used_len != used_q:
+            raise ValueError("compact RainFusion video layout must match valid target Q length")
+        used_kv = int(metadata.extra["max_seqlen_k"])
+        if used_kv != used_q + reference_rows:
+            raise ValueError("compact RainFusion valid KV length must include the reference prefix")
+        if image_layout is not None:
+            kv_layout = image_layout.original
+        else:
+            assert layout is not None
+            kv_layout = metadata.extra.get("minimax_h3_reference_kv_video_layout")
+            if kv_layout is None:
+                kv_layout = replace(
+                    layout,
+                    used_len=used_kv,
+                    video_spans=tuple(replace(span, start=span.start + reference_rows) for span in layout.video_spans),
+                )
+        if kv_layout.used_len != used_kv:
+            raise ValueError("RainFusion reference KV video layout must match valid KV length")
+        sparse_metadata = replace(
+            metadata,
+            packed_padding=None,
+            extra={**metadata.extra, "max_seqlen_q": used_kv},
+            video_layout=kv_layout,
+        )
+        plan = self._resolve_plan(sparse_metadata)
+        return plan, sparse_metadata, image_layout
+
+    def prepare_compact_head_overlap(
+        self, metadata: AttentionMetadata, reference_rows: int, device: torch.device
+    ) -> tuple[tuple[object, ...], Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]] | None:
+        """Prepare a tensor-only rectangular mix call, using the normal RF geometry."""
+        if (
+            self.qkv_layout != _INPUT_LAYOUT
+            or metadata.attn_mask is not None
+            or metadata.full_attn_spans is not None
+            or "kv_cache_dtype" in metadata.extra
+            or self.rainfusion.precision != "mix"
+        ):
+            return None
+        plan, _, image_layout = self._resolve_compact_plan(metadata, reference_rows)
+        if plan is None or not plan.video_spans:
+            return None
+
+        from mindiesd.utils.get_platform import is_a5_device
+
+        if not is_a5_device():
+            return None
+        return self._prepare_rectangular_npu(metadata, plan, reference_rows, image_layout, device, "mix")
 
     def _forward_rectangular_npu(
         self,
@@ -392,8 +417,6 @@ class RainFusionAttentionImpl(AttentionImpl):
         reference_rows: int,
         image_layout: ReferenceImageLayout | None,
     ) -> torch.Tensor:
-        from vllm_omni.diffusion.attention.ops.rainfusion_rectangular import get_plan, run
-
         if metadata.attn_mask is not None:
             raise ValueError("rectangular RainFusion cannot replace an explicit attention mask")
         if metadata.extra.get("kv_cache_dtype", "bf16") not in ("float", "bf16"):
@@ -401,6 +424,22 @@ class RainFusionAttentionImpl(AttentionImpl):
         precision = metadata.extra.get("kv_cache_dtype", self.rainfusion.precision)
         if precision == "float":
             precision = "bf16"
+        _, compute = self._prepare_rectangular_npu(
+            metadata, plan, reference_rows, image_layout, query.device, precision
+        )
+        return compute(query, key, value)
+
+    def _prepare_rectangular_npu(
+        self,
+        metadata: AttentionMetadata,
+        plan: RainFusionPlan,
+        reference_rows: int,
+        image_layout: ReferenceImageLayout | None,
+        device: torch.device,
+        precision: str,
+    ) -> tuple[tuple[object, ...], Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]]:
+        from vllm_omni.diffusion.attention.ops.rainfusion_rectangular import get_plan, run
+
         used_q = int(metadata.extra["max_seqlen_q"])
         used_kv = int(metadata.extra["max_seqlen_k"])
         if plan.video_spans is None:
@@ -411,20 +450,37 @@ class RainFusionAttentionImpl(AttentionImpl):
         images = tuple(
             (cast(int, span["start"]), tuple(cast(list[int], span["latent_shape"]))) for span in plan.image_spans or ()
         )
-        rect_plan = get_plan(
-            used_kv, reference_rows, spans, str(query.device), image_spans=images, image_layout=image_layout
+        rect_plan = get_plan(used_kv, reference_rows, spans, str(device), image_spans=images, image_layout=image_layout)
+        sparsity = self.rainfusion.sparsity
+        image_sparsity = self.rainfusion.image_sparsity
+        scale = self.softmax_scale
+
+        def compute(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+            result = run(
+                query[:, :used_q],
+                key[:, :used_kv],
+                value[:, :used_kv],
+                rect_plan,
+                sparsity,
+                scale,
+                precision=precision,
+                image_sparsity=image_sparsity,
+            )
+            return torch.cat((result, query[:, used_q:]), dim=1) if query.shape[1] > used_q else result
+
+        geometry = (
+            used_q,
+            used_kv,
+            reference_rows,
+            spans,
+            images,
+            image_layout.reference_positions if images and image_layout is not None else (),
+            sparsity,
+            image_sparsity,
+            scale,
+            precision,
         )
-        result = run(
-            query[:, :used_q],
-            key[:, :used_kv],
-            value[:, :used_kv],
-            rect_plan,
-            self.rainfusion.sparsity,
-            self.softmax_scale,
-            precision=precision,
-            image_sparsity=self.rainfusion.image_sparsity,
-        )
-        return torch.cat((result, query[:, used_q:]), dim=1) if query.shape[1] > used_q else result
+        return geometry, compute
 
     def _can_use_hybrid(self, query: torch.Tensor, metadata: AttentionMetadata | None) -> bool:
         if (

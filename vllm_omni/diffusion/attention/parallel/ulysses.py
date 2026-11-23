@@ -275,6 +275,25 @@ class UlyssesParallelAttention:
     def name(self) -> str:
         return "ulysses"
 
+    def head_overlap_group(self, num_heads: int, groups: int) -> tuple[int, dist.ProcessGroup] | None:
+        """Return the strict Ulysses geometry and its matching host process group."""
+        sp = self._sp_group
+        world = sp.ulysses_world_size
+        if (
+            groups < 2
+            or world < 2
+            or sp.ring_world_size != 1
+            or sp.allgather_world_size != 1
+            or self._use_sync
+            or self._ulysses_a2a_permute
+            or (self._scatter_idx, self._gather_idx) != (2, 1)
+            or get_ulysses_mode(default="strict") != "strict"
+            or num_heads < world * groups
+            or num_heads % (world * groups)
+        ):
+            return None
+        return world, sp.cpu_group
+
     def pre_attention(
         self,
         query: torch.Tensor,

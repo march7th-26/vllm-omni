@@ -370,6 +370,8 @@ class OmniEngineArgs(EngineArgs):
     fastvideo_vsa_topk: int | None = None
     diffusion_attention_config: str | None = None
     diffusion_attention_schedule: dict[str, Any] | None = None
+    diffusion_attn_head_overlap: int | None = None
+    diffusion_attn_head_overlap_graph: bool | None = None
     diffusion_compile_granularity: str | None = None
     diffusion_compile_dynamic: bool | None = None
     enable_cuda_graph_decode: bool | None = None
@@ -794,6 +796,8 @@ class OrchestratorArgs:
     fastvideo_vsa_topk: int | None = None
     diffusion_attention_config: str | None = None
     diffusion_attention_schedule: dict[str, Any] | None = None
+    diffusion_attn_head_overlap: int | None = None
+    diffusion_attn_head_overlap_graph: bool | None = None
     diffusion_compile_granularity: str | None = None
     diffusion_compile_dynamic: bool | None = None
     # CUDA graph capture of fixed-shape KV-cache decode steps (Qwen-Image-2.1
@@ -881,6 +885,8 @@ SHARED_FIELDS: frozenset[str] = frozenset(
         "fastvideo_vsa_topk",
         "diffusion_attention_config",
         "diffusion_attention_schedule",
+        "diffusion_attn_head_overlap",
+        "diffusion_attn_head_overlap_graph",
         "diffusion_compile_granularity",
         "diffusion_compile_dynamic",
         "enable_cuda_graph_decode",

@@ -634,6 +634,8 @@ class StageDeployConfig:
     fastvideo_vsa_topk: int | None = None
     diffusion_attention_config: dict[str, Any] | None = None
     diffusion_attention_schedule: dict[str, Any] | None = None
+    diffusion_attn_head_overlap: int | None = None
+    diffusion_attn_head_overlap_graph: bool | None = None
 
     # Diffusion execution, cache, and VAE behavior.
     diffusion_compile_granularity: str | None = None

@@ -872,6 +872,8 @@ class OmniDiffusionConfig:
     # Attention
     diffusion_attention_config: "AttentionConfig" = field(default_factory=lambda: AttentionConfig())
     diffusion_attention_schedule: "AttentionScheduleConfig | None" = None
+    diffusion_attn_head_overlap: int = 0
+    diffusion_attn_head_overlap_graph: bool = False
     fa_deterministic: bool = False
     # Run the positive and negative CFG branches as one batched denoiser call
     # when CFG is not split across ranks. Only pipelines that declare
@@ -1424,6 +1426,14 @@ class OmniDiffusionConfig:
         # Parsed before the 'full' check, which needs the normalized value: a schedule without
         # profiles parses to None.
         self.diffusion_attention_schedule = parse_attention_schedule_config(self.diffusion_attention_schedule)
+
+        groups = self.diffusion_attn_head_overlap
+        if type(groups) is not int or groups < 0:
+            raise ValueError("diffusion_attn_head_overlap must be a non-negative integer")
+        if type(self.diffusion_attn_head_overlap_graph) is not bool:
+            raise ValueError("diffusion_attn_head_overlap_graph must be a boolean")
+        if self.diffusion_attn_head_overlap_graph and groups < 2:
+            raise ValueError("diffusion_attn_head_overlap_graph requires at least two head groups")
 
         if self.diffusion_compile_granularity == "full":
             incompatible_features = []

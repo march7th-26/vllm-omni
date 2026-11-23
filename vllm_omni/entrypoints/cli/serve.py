@@ -896,6 +896,22 @@ class OmniServeCommand(CLISubcommand):
 
         # Cache optimization parameters
         omni_config_group.add_argument(
+            "--diffusion-attn-head-overlap",
+            type=int,
+            default=None,
+            metavar="N",
+            help="Overlap Ulysses communication with attention in MiniMax-H3 A5 resident short-Q "
+            "steps using N head groups. Values 0 and 1 disable it.",
+        )
+        omni_config_group.add_argument(
+            "--diffusion-attn-head-overlap-graph",
+            action="store_true",
+            default=None,
+            help="Capture the short-Q head overlap in an NPUGraph. "
+            "If capture is unavailable, use ordinary ungrouped Ulysses.",
+        )
+
+        omni_config_group.add_argument(
             "--cache-backend",
             type=str,
             default="none",

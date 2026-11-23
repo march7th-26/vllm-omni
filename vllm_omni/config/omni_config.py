@@ -839,6 +839,8 @@ class _DiffusionConfigProjection(_TrackExplicitConfigFields):
     tf_model_config: Any = None
     diffusion_attention_config: Any = None
     diffusion_attention_schedule: Any = None
+    diffusion_attn_head_overlap: int = 0
+    diffusion_attn_head_overlap_graph: bool = False
     cache_strategy: str = "none"
     cache_backend: str = "none"
     cache_config: Any = field(default_factory=dict)
