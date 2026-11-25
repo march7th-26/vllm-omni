@@ -1,11 +1,90 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
 
 pytestmark = [pytest.mark.core_model, pytest.mark.cpu, pytest.mark.diffusion]
+
+
+@pytest.mark.parametrize(
+    ("world_size", "removed_rows", "expected_padding"),
+    [(1, 6, 0), (4, 4, 0), (4, 6, 2), (8, 6, 6), (4, 62, 2)],
+)
+def test_compact_reference_positions_form_equal_sp_shards(
+    world_size: int, removed_rows: int, expected_padding: int
+) -> None:
+    from vllm_omni.diffusion.models.minimax_h3.minimax_h3_transformer import _local_compact_positions
+
+    seq_len = 64
+    active_positions = torch.arange(removed_rows, seq_len)
+    local_len = seq_len // world_size
+    compact_local_len = (active_positions.numel() + expected_padding) // world_size
+    positions_by_rank = []
+    for rank in range(world_size):
+        positions, local_padding, padding = _local_compact_positions(
+            active_positions, seq_len=seq_len, local_start=rank * local_len, local_len=local_len
+        )
+        assert padding == expected_padding
+        assert positions.numel() + local_padding == compact_local_len
+        positions_by_rank.append(positions)
+
+    torch.testing.assert_close(torch.cat(positions_by_rank), active_positions)
+
+
+@pytest.mark.parametrize("with_mask", [False, True])
+def test_reference_kv_padding_is_removed_before_attention(with_mask: bool) -> None:
+    from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata
+    from vllm_omni.diffusion.attention.layer import Attention
+
+    original = torch.arange(1, 4, dtype=torch.float32).reshape(1, 3, 1, 1)
+    padded = torch.cat((original, torch.full((1, 1, 1, 1), 999.0)), dim=1)
+    cached = original[:, :2]
+    mask = torch.tensor([[True, True, True, True, False]]) if with_mask else None
+
+    class Strategy:
+        name = "ulysses"
+
+        def pre_attention(self, query, key, value, metadata):
+            assert metadata.attn_mask is None
+            return query, key, value, metadata, None
+
+        def post_attention(self, output, ctx):
+            torch.testing.assert_close(output[:, :3], original)
+            assert output[:, 3:].flatten().tolist() == [0.0]
+            return output
+
+    def prepend_reference(layer_index, key, value, *, compact, parallel_strategy):
+        assert layer_index == 0 and compact and parallel_strategy == "ulysses"
+        torch.testing.assert_close(key, original)
+        torch.testing.assert_close(value, original)
+        return torch.cat((cached, key), dim=1), torch.cat((cached, value), dim=1)
+
+    def attend(query, key, value, metadata):
+        torch.testing.assert_close(query, original)
+        torch.testing.assert_close(key, torch.cat((cached, original), dim=1))
+        torch.testing.assert_close(value, key)
+        assert metadata.attn_mask is mask
+        return query
+
+    layer = Attention.__new__(Attention)
+    nn.Module.__init__(layer)
+    layer._explicit_cross_contract = False
+    layer._scheduler_paged_kv = False
+    layer.use_ring = False
+    layer._active_paged_kv_adapter = lambda: None
+    layer._get_active_parallel_strategy = Strategy
+    layer._with_kv_cache_dtype = lambda metadata: metadata
+    layer._run_local_attention = attend
+    state = SimpleNamespace(compact_sp_padding=1, process_post_parallel_layer=prepend_reference)
+    metadata = AttentionMetadata(attn_mask=mask, extra={"minimax_h3_reference_kv_post_parallel": (state, 0, True)})
+    output = layer._forward_impl(padded, padded, padded, metadata)
+
+    assert output.shape == padded.shape
+    assert metadata.attn_mask is mask
 
 
 def test_grouped_qkv_checkpoint_reorder():
@@ -401,13 +480,14 @@ def test_local_embedding_spans_reassemble_multimodal_rows():
 
 
 @pytest.mark.parametrize(
-    "local_projection",
-    [False, True],
-    ids=["fallback", "strict-local"],
+    ("local_projection", "compact_reference"),
+    [(False, False), (True, False), (True, True)],
+    ids=["fallback", "strict-local", "compact-local-with-padding"],
 )
 def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
     monkeypatch,
     local_projection,
+    compact_reference,
 ):
     from vllm_omni.diffusion.models.minimax_h3 import minimax_h3_transformer as h3
 
@@ -419,26 +499,40 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
             return torch.zeros(position_ids.shape[1], 6)
 
     class _Prepare(nn.Module):
-        def __init__(self, shard):
+        def __init__(self, shard, metadata_start=0):
             super().__init__()
             self.shard = shard
+            self.metadata_start = metadata_start
 
         def forward(self, hidden, rope, combined):
             local_len = hidden.shape[0] // 2 if self.shard else hidden.shape[0]
-            return hidden[:local_len], rope[:local_len], combined[:local_len]
+            metadata = combined[self.metadata_start : self.metadata_start + local_len]
+            return hidden[:local_len], rope[:local_len], metadata
 
     class _Gather(nn.Module):
-        def __init__(self, remote_rows, replace):
+        def __init__(self, remote_rows, replace, *, prepend=False):
             super().__init__()
             self.remote_rows = remote_rows
             self.replace = replace
+            self.prepend = prepend
             self.input_width = None
 
         def forward(self, tensor):
             self.input_width = tensor.shape[-1]
             if self.replace:
                 return self.remote_rows
+            if self.prepend:
+                return torch.cat((self.remote_rows, tensor), dim=0)
             return torch.cat((tensor, self.remote_rows), dim=0)
+
+    class _CompactBlock(nn.Module):
+        def forward(self, hidden, *, rope_table, combined_indices, packed_total, **kwargs):
+            assert packed_total == 7
+            assert hidden.shape[0] == rope_table.shape[0] == combined_indices.shape[0] == 4
+            torch.testing.assert_close(hidden[-1], torch.zeros_like(hidden[-1]))
+            torch.testing.assert_close(rope_table[-1], torch.zeros_like(rope_table[-1]))
+            assert combined_indices.tolist() == [0, 3, 0, 0]
+            return hidden
 
     class _FinalLayer(nn.Module):
         def forward(self, hidden, *, t_emb, inverse_indices, pdd_step=None):
@@ -454,16 +548,18 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
     full_hidden = torch.arange(seq_len * 4, dtype=torch.bfloat16).reshape(seq_len, 4)
     inverse_indices = torch.tensor([0, 1, 0, 1, 1, 0, 1, 0])
     final_layer = _FinalLayer()
+    active_positions = torch.tensor([0, 1, 3, 4, 5, 6, 7])
+    remote_positions = active_positions[: seq_len // 2] if compact_reference else torch.arange(seq_len // 2, seq_len)
     remote_video, remote_audio = final_layer(
-        full_hidden[seq_len // 2 :],
+        full_hidden[remote_positions],
         t_emb=torch.empty(0),
-        inverse_indices=inverse_indices[seq_len // 2 :],
+        inverse_indices=inverse_indices[remote_positions],
     )
     if local_projection:
         remote_rows = torch.cat((remote_video, remote_audio), dim=-1)
     else:
         remote_rows = full_hidden
-    gather = _Gather(remote_rows, replace=not local_projection)
+    gather = _Gather(remote_rows, replace=not local_projection, prepend=compact_reference)
 
     model = object.__new__(h3.MiniMaxH3DiTModel)
     nn.Module.__init__(model)
@@ -471,25 +567,29 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
         latents_dim=2,
         audio_latents_dim=1,
         patch_size=(1, 1, 1),
+        rope_inv_freq_len=1,
     )
     rope = _StaticRope()
     model.rope = rope
     model.sp_prepare = _Prepare(shard=True)
-    model.local_sp_prepare = _Prepare(shard=False)
+    model.local_sp_prepare = _Prepare(shard=False, metadata_start=4 if compact_reference else 0)
     model.sp_gather = gather
-    model.blocks = nn.ModuleList()
+    model.blocks = nn.ModuleList([_CompactBlock()] if compact_reference else [])
     model.final_layer = final_layer
-    monkeypatch.setattr(
-        model,
-        "_embed",
-        lambda **kwargs: (
-            full_hidden[: seq_len // 2] if local_projection else full_hidden,
-            torch.tensor([[0.5]], dtype=torch.float32),
-        ),
-    )
+
+    def _embed(*, global_positions, **kwargs):
+        if global_positions is not None:
+            hidden = full_hidden[global_positions]
+        else:
+            hidden = full_hidden[: seq_len // 2] if local_projection else full_hidden
+        return hidden, torch.tensor([[0.5]], dtype=torch.float32)
+
+    monkeypatch.setattr(model, "_embed", _embed)
 
     def _local_span(*args, **kwargs):
         del args, kwargs
+        if compact_reference:
+            return seq_len // 2, seq_len // 2
         return (0, seq_len // 2) if local_projection else (0, seq_len)
 
     monkeypatch.setattr(
@@ -500,6 +600,16 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
 
     img_pos = torch.tensor([0, 2, 4, 6])
     audio_pos = torch.tensor([1, 3, 5, 7])
+    reference_kv_state = None
+    if compact_reference:
+        reference_kv_state = SimpleNamespace(
+            should_skip_reference_projection=True,
+            global_reference_rows=1,
+            global_non_reference_positions=active_positions,
+            compact_rope_table=None,
+            cache_compact_rope_table=lambda table: table,
+        )
+        monkeypatch.setattr(h3, "_supports_reference_kv_compaction", lambda _: True)
     video, audio = model(
         x=torch.zeros(1, seq_len, 2),
         audio_x=torch.zeros(1, seq_len, 1),
@@ -521,6 +631,7 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
             "cu_seqlens_q": torch.tensor([0, 0, 0], dtype=torch.int32),
             "max_seqlen_q": 0,
         },
+        reference_kv_state=reference_kv_state,
     )
 
     expected_video, expected_audio = final_layer(
@@ -528,10 +639,14 @@ def test_sp_output_boundary_preserves_logits_and_minimizes_gather(
         t_emb=torch.empty(0),
         inverse_indices=inverse_indices,
     )
+    if compact_reference:
+        expected_video[2] = 0
     torch.testing.assert_close(video, expected_video.index_select(0, img_pos))
     torch.testing.assert_close(audio, expected_audio.index_select(0, audio_pos))
     expected_gather_width = 3 if local_projection else full_hidden.shape[-1]
     expected_rope_rows = seq_len // 2 if local_projection else seq_len
+    if compact_reference:
+        expected_rope_rows -= 1
     assert gather.input_width == expected_gather_width
     assert rope.input_rows == expected_rope_rows
 

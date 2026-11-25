@@ -74,6 +74,7 @@ class _MiniMaxH3ReferenceKVBase:
         self._global_non_reference_positions: torch.Tensor | None = None
         self._global_reference_positions: torch.Tensor | None = None
         self._compact_rope_table: torch.Tensor | None = None
+        self.compact_sp_padding = 0
         self._step: int | None = None
         self._refresh = False
         self._global_refresh = False
@@ -790,3 +791,4 @@ class MiniMaxH3ReferenceKVTier2State(_MiniMaxH3ReferenceKVBase):
         self._global_reference_positions = None
         self._global_sequence_rows = None
         self._compact_rope_table = None
+        self.compact_sp_padding = 0

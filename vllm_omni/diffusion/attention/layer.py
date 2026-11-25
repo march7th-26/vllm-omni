@@ -1263,11 +1263,6 @@ class Attention(nn.Module):
                 raise TypeError("reference isolation metadata must be a (state, compact) tuple")
             isolated_dense = self._reference_isolation_dense_impl()
 
-        # 1. Prepare inputs (Communication / Resharding)
-        # For Ulysses: AllToAll Q/K/V; Slicing joint_q/k/v
-        # For Ring: Concat joint_q
-        query, key, value, attn_metadata, ctx = strategy.pre_attention(query, key, value, attn_metadata)
-
         # MiniMax-H3 Tier2 stores reference K/V in the balanced layout produced
         # by Ulysses. Keeping this hook at the generic post-parallel boundary
         # avoids a model import in the parallel strategy and leaves other models
@@ -1275,15 +1270,39 @@ class Attention(nn.Module):
         post_parallel_ref = (
             attn_metadata.extra.get("minimax_h3_reference_kv_post_parallel") if attn_metadata is not None else None
         )
+        ref_sp_padding = 0
+        ref_kv_mask = None
         if post_parallel_ref is not None:
             if not isinstance(post_parallel_ref, tuple) or len(post_parallel_ref) != 3:
                 raise TypeError("minimax_h3_reference_kv_post_parallel must be a (state, layer_index, compact) tuple")
             if self.use_ring:
                 raise NotImplementedError("post-Ulysses MiniMax-H3 reference KV requires ring_degree=1")
             state, layer_index, compact = post_parallel_ref
+            processor: Any
             processor = getattr(state, "process_post_parallel_layer", None)
             if not callable(processor):
                 raise TypeError("MiniMax-H3 reference-KV state does not implement process_post_parallel_layer")
+            if compact:
+                ref_sp_padding = getattr(state, "compact_sp_padding", 0)
+            if ref_sp_padding:
+                if strategy.name != "ulysses" or use_paged_attention:
+                    raise ValueError("MiniMax-H3 reference-KV padding requires pure Ulysses")
+                # The mask covers the final K/V, after the cached prefix is appended.
+                assert attn_metadata is not None
+                ref_kv_mask = attn_metadata.attn_mask
+                if ref_kv_mask is not None:
+                    attn_metadata = replace(attn_metadata, attn_mask=None)
+
+        # 1. Prepare inputs (Communication / Resharding)
+        # For Ulysses: AllToAll Q/K/V; Slicing joint_q/k/v
+        # For Ring: Concat joint_q
+        query, key, value, attn_metadata, ctx = strategy.pre_attention(query, key, value, attn_metadata)
+
+        if post_parallel_ref is not None:
+            if ref_sp_padding:
+                query = query[:, :-ref_sp_padding].contiguous()
+                key = key[:, :-ref_sp_padding].contiguous()
+                value = value[:, :-ref_sp_padding].contiguous()
             key, value = processor(
                 int(layer_index),
                 key,
@@ -1291,6 +1310,11 @@ class Attention(nn.Module):
                 compact=bool(compact),
                 parallel_strategy=strategy.name,
             )
+            if ref_kv_mask is not None:
+                assert attn_metadata is not None
+                if ref_kv_mask.shape[-1] != key.shape[1]:
+                    raise ValueError("MiniMax-H3 reference-KV mask must cover cached and compact rows")
+                attn_metadata.attn_mask = ref_kv_mask
 
         # Scheduler rows describe the logical sequence, while strict Ulysses
         # may append synthetic tokens solely to make the image shard divisible.
@@ -1365,6 +1389,10 @@ class Attention(nn.Module):
             padding_start = paged_sp_padding_offset - paged_sp_padding
             output_padding = out.new_zeros((out.shape[0], paged_sp_padding, *out.shape[2:]))
             out = torch.cat((out[:, :padding_start], output_padding, out[:, padding_start:]), dim=1)
+
+        if ref_sp_padding:
+            output_padding = out.new_zeros((out.shape[0], ref_sp_padding, *out.shape[2:]))
+            out = torch.cat((out, output_padding), dim=1)
 
         # 3. Post-processing (Reverse Communication)
         # For Ulysses: AllToAll Output, and AllGather Joint Output

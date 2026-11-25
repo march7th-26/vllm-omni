@@ -178,21 +178,26 @@ def _local_compact_positions(
     seq_len: int,
     local_start: int,
     local_len: int,
-) -> torch.Tensor | None:
-    """Select this SP rank's equal shard from the compact global row order."""
+) -> tuple[torch.Tensor, int, int]:
+    """Return this rank's compact positions, local padding and global padding."""
     if local_len == seq_len:
-        return active_positions
+        return active_positions, 0, 0
     if local_len <= 0 or seq_len % local_len:
         raise ValueError(f"original SP layout must evenly shard {seq_len} rows, got {local_len}")
     world_size = seq_len // local_len
     if local_start % local_len or not 0 <= local_start < seq_len:
         raise ValueError(f"invalid original SP span start={local_start}, length={local_len}")
     compact_total = int(active_positions.numel())
-    if compact_total % world_size:
-        return None
-    compact_local_len = compact_total // world_size
+    padding = (-compact_total) % world_size
+    compact_local_len = (compact_total + padding) // world_size
     rank = local_start // local_len
-    return active_positions.narrow(0, rank * compact_local_len, compact_local_len)
+    start = min(rank * compact_local_len, compact_total)
+    valid = min(compact_local_len, compact_total - start)
+    return active_positions.narrow(0, start, valid), compact_local_len - valid, padding
+
+
+def _pad_compact_rows(tensor: torch.Tensor, padding: int) -> torch.Tensor:
+    return torch.cat((tensor, tensor.new_zeros((padding, *tensor.shape[1:]))), dim=0)
 
 
 _ARCH_DEFAULTS = MiniMaxH3DiTArchConfig()
@@ -1486,6 +1491,8 @@ class MiniMaxH3DiTModel(nn.Module):
         compact_reference = False
         active_positions: torch.Tensor | None = None
         compact_local_positions: torch.Tensor | None = None
+        compact_local_padding = 0
+        compact_sp_padding = 0
         if reference_kv_state is not None:
             if reference_kv_state.should_skip_reference_projection:
                 if num_requests != 1 or not _supports_reference_kv_compaction(self.blocks):
@@ -1502,14 +1509,13 @@ class MiniMaxH3DiTModel(nn.Module):
                         f"{active_positions.numel()} != "
                         f"{seq_len - reference_rows}"
                     )
-                compact_local_positions = _local_compact_positions(
+                compact_local_positions, compact_local_padding, compact_sp_padding = _local_compact_positions(
                     active_positions,
                     seq_len=seq_len,
                     local_start=local_start,
                     local_len=local_len,
                 )
-                if compact_local_positions is None:
-                    raise ValueError("MiniMax H3 reference-KV target rows cannot form an equal SP shard")
+                reference_kv_state.compact_sp_padding = compact_sp_padding
 
         rope_table = kwargs.get("rope_table")
         if compact_reference and local_len != seq_len:
@@ -1518,10 +1524,12 @@ class MiniMaxH3DiTModel(nn.Module):
             if rope_table is None:
                 compact_rope_ids = img_position_ids.to(device).index_select(1, compact_local_positions)
                 rope_table = _build_rope_table(self.rope(compact_rope_ids).to(device))
+                if compact_local_padding:
+                    rope_table = _pad_compact_rows(rope_table, compact_local_padding)
                 rope_table = reference_kv_state.cache_compact_rope_table(rope_table)
             self._validate_prepared_rope_table(
                 rope_table,
-                local_len=compact_local_positions.numel(),
+                local_len=compact_local_positions.numel() + compact_local_padding,
                 device=device,
             )
         elif rope_table is None:
@@ -1558,6 +1566,8 @@ class MiniMaxH3DiTModel(nn.Module):
             local_span=local_span,
             global_positions=(compact_local_positions if compact_reference and local_len != seq_len else None),
         )
+        if compact_local_padding:
+            decoder_input = _pad_compact_rows(decoder_input, compact_local_padding)
 
         combined_indices = (inverse_indices * MINIMAX_H3_ADALN_MODALITY_NUM + token_tags.clamp(min=0)).to(device)
         inverse_indices = inverse_indices.to(device)
@@ -1593,6 +1603,8 @@ class MiniMaxH3DiTModel(nn.Module):
                 # compact shard. Metadata starts global so its SP hook selects
                 # exactly the same compact rows.
                 block_combined = block_combined.index_select(0, active_positions)
+                if compact_sp_padding:
+                    block_combined = _pad_compact_rows(block_combined, compact_sp_padding)
                 hidden, block_rope, block_combined = self.local_sp_prepare(hidden, block_rope, block_combined)
         else:
             if local_len == seq_len:
@@ -1708,6 +1720,8 @@ class MiniMaxH3DiTModel(nn.Module):
             assert active_positions is not None
             assert compact_local_positions is not None
             local_inverse_indices = inverse_indices.index_select(0, compact_local_positions)
+            if compact_local_padding:
+                local_inverse_indices = _pad_compact_rows(local_inverse_indices, compact_local_padding)
             video_logits, audio_logits = self.final_layer(
                 hidden,
                 t_emb=t_emb,
@@ -1716,6 +1730,8 @@ class MiniMaxH3DiTModel(nn.Module):
             )
             compact_logits = torch.cat((video_logits, audio_logits), dim=-1)
             compact_logits = self.sp_gather(compact_logits)
+            if compact_sp_padding:
+                compact_logits = compact_logits[:-compact_sp_padding]
             video_width = self.arch.latents_dim * math.prod(self.arch.patch_size)
             compact_video = compact_logits[..., :video_width]
             compact_audio = compact_logits[..., video_width:]
