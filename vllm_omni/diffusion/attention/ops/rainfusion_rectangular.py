@@ -128,17 +128,38 @@ def native_bf16(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.T
     )
 
 
-def native_mix(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor, scale: float) -> torch.Tensor:
-    from mindiesd.layers.flash_attn.sparse_flash_attn_rf_v3 import _eagle_qbsa_quant_qkv
+@dataclass(frozen=True)
+class _QuantizedMixKV:
+    key: torch.Tensor
+    value: torch.Tensor
+    key_scale: torch.Tensor
+    value_scale: torch.Tensor
+
+
+def native_mix(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    mask: torch.Tensor,
+    scale: float,
+    quantized_kv: _QuantizedMixKV | None,
+) -> tuple[torch.Tensor, _QuantizedMixKV]:
+    from mindiesd.layers.flash_attn.sparse_flash_attn_rf_v3 import _eagle_qbsa_quant_qkv, _perblock_quant
     from torch_npu import float8_e4m3fn
 
     if q.shape[-1] != 128:
         raise ValueError("rectangular mix validated for head_dim128 only")
-    qq, kk, vv, qs, ks, vs = _eagle_qbsa_quant_qkv(q, k, v, block_size_q=64, layout="BSND")
+    if quantized_kv is None:
+        query, key, value, query_scale, key_scale, value_scale = _eagle_qbsa_quant_qkv(
+            q, k, v, block_size_q=64, layout="BSND"
+        )
+        quantized_kv = _QuantizedMixKV(key, value, key_scale, value_scale)
+    else:
+        query, query_scale = _perblock_quant(q.transpose(1, 2).contiguous(), block_size=64, dst_type=torch.int8)
     out, _ = torch.ops.mindiesd.eagle_quant_block_sparse_attention(
-        query=qq,
-        key=kk,
-        value=vv.view(torch.int8),
+        query=query,
+        key=quantized_kv.key,
+        value=quantized_kv.value.view(torch.int8),
         block_sparse_mask=mask,
         block_shape=[128, 128],
         q_input_layout="BNSD",
@@ -149,15 +170,15 @@ def native_mix(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Te
         softmax_lse_flag=0,
         actual_seq_lengths=[q.shape[1]],
         actual_seq_lengths_kv=[k.shape[1]],
-        query_scale=qs,
-        key_scale=ks,
-        value_scale=vs,
+        query_scale=query_scale,
+        key_scale=quantized_kv.key_scale,
+        value_scale=quantized_kv.value_scale,
         query_dtype=torch.int8,
         key_dtype=torch.int8,
         value_dtype=float8_e4m3fn,
         output_dtype=torch.bfloat16,
     )
-    return out.transpose(1, 2).contiguous()
+    return out.transpose(1, 2).contiguous(), quantized_kv
 
 
 def run(
@@ -174,9 +195,6 @@ def run(
     if precision not in ("bf16", "mix"):
         raise ValueError("unsupported rectangular precision")
 
-    def native(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor, scale: float) -> torch.Tensor:
-        return native_mix(q, k, v, mask, scale) if precision == "mix" else native_bf16(q, k, v, mask, scale)
-
     if q.dtype != torch.bfloat16 or k.dtype != q.dtype or v.dtype != q.dtype:
         raise ValueError("BF16 inputs required")
     if (
@@ -188,6 +206,17 @@ def run(
         raise ValueError("layout mismatch")
     kr = k.index_select(1, plan.key_indices)
     vr = v.index_select(1, plan.key_indices)
+    # Both query groups see the same reordered K/V. Keep the quantized data
+    # local to this call because subsequent layers supply different K/V.
+    quantized_kv: _QuantizedMixKV | None = None
+
+    def attend(group_q: torch.Tensor, group_mask: torch.Tensor) -> torch.Tensor:
+        nonlocal quantized_kv
+        if precision == "bf16":
+            return native_bf16(group_q, kr, vr, group_mask, scale)
+        result, quantized_kv = native_mix(group_q, kr, vr, group_mask, scale, quantized_kv)
+        return result
+
     out = torch.empty_like(q)
     if plan.sparse_rows:
         qs = q.index_select(1, plan.sparse_indices)
@@ -211,7 +240,7 @@ def run(
                 mask[..., rows[:, None], columns[None, :]] = torch.zeros_like(values, dtype=torch.bool).scatter_(
                     -1, selected, True
                 )
-        ys = native(qs, kr, vr, mask.to(torch.int8), scale)
+        ys = attend(qs, mask.to(torch.int8))
         out.index_copy_(1, plan.sparse_indices, ys)
     if plan.dense_rows:
         qd = q.index_select(1, plan.dense_indices)
@@ -223,6 +252,6 @@ def run(
             device=q.device,
             dtype=torch.int8,
         )
-        yd = native(qd, kr, vr, dense_mask, scale)
+        yd = attend(qd, dense_mask)
         out.index_copy_(1, plan.dense_indices, yd)
     return out

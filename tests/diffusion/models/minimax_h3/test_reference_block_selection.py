@@ -344,8 +344,11 @@ def test_rectangular_image_mask_and_cached_row_mapping(geometry, monkeypatch, mo
         calls.append((q.clone(), k.clone(), mask.clone()))
         return q
 
+    def native_mix(q, k, v, mask, scale, quantized_kv):
+        return native(q, k, v, mask, scale), quantized_kv
+
     rectangular.__dict__["native_bf16"] = native if precision == "bf16" else mocker.Mock(side_effect=AssertionError)
-    rectangular.__dict__["native_mix"] = native if precision == "mix" else mocker.Mock(side_effect=AssertionError)
+    rectangular.__dict__["native_mix"] = native_mix if precision == "mix" else mocker.Mock(side_effect=AssertionError)
     ref_positions = tuple(range(24, 280)) + tuple(range(312, 728))
     if partial:
         ref_positions += (896,)
@@ -375,3 +378,82 @@ def test_rectangular_image_mask_and_cached_row_mapping(geometry, monkeypatch, mo
     torch.testing.assert_close(reordered_k, logical[:, perm])
     assert mask[0, 0].tolist() == [[0, 1, 1, 1, 1, 1, 1, 1, 1]] * (1 if partial else 2)
     assert calls[1][2].all()
+
+
+@pytest.mark.parametrize(("sparse_rows", "dense_rows"), [(128, 37), (129, 0), (0, 37)])
+def test_rectangular_mix_quantizes_kv_once(monkeypatch, mocker, sparse_rows, dense_rows):
+    rectangular = definitions(
+        "_rbs_quantized_rectangular",
+        "vllm_omni/diffusion/attention/ops/rainfusion_rectangular.py",
+        {"Plan", "_QuantizedMixKV", "native_mix", "run"},
+        {
+            "dataclass": dataclasses.dataclass,
+            "math": math,
+            "torch": torch,
+            "avgpool": lambda x, size, layout: torch.stack(
+                [block.mean(dim=1) for block in x.split(size, dim=1)], dim=1
+            ),
+        },
+    )
+
+    def quantize_blocks(bnsd):
+        batch, heads, rows, _ = bnsd.shape
+        return bnsd.to(torch.int8), torch.ones(batch, heads, math.ceil(rows / 64))
+
+    def quantize_qkv(q, k, v, *, block_size_q, layout):
+        query, query_scale = quantize_blocks(q.transpose(1, 2))
+        key, key_scale = quantize_blocks(k.transpose(1, 2))
+        value = v.transpose(1, 2).to(torch.float8_e4m3fn)
+        value_scale = torch.ones(value.shape[0], value.shape[1], value.shape[-1])
+        return query, key, value, query_scale, key_scale, value_scale
+
+    sdk = ModuleType("mindiesd.layers.flash_attn.sparse_flash_attn_rf_v3")
+    sdk._eagle_qbsa_quant_qkv = mocker.Mock(side_effect=quantize_qkv)
+    sdk._perblock_quant = mocker.Mock(side_effect=lambda q, **kwargs: quantize_blocks(q))
+    monkeypatch.setitem(sys.modules, sdk.__name__, sdk)
+    npu = ModuleType("torch_npu")
+    npu.float8_e4m3fn = torch.float8_e4m3fn
+    monkeypatch.setitem(sys.modules, npu.__name__, npu)
+    attention = mocker.Mock(side_effect=lambda **kwargs: (kwargs["query"].to(torch.bfloat16), None))
+    monkeypatch.setattr(torch.ops.mindiesd, "eagle_quant_block_sparse_attention", attention, raising=False)
+
+    key_rows = 257
+    dtype = torch.bfloat16
+    q = torch.full((1, sparse_rows + dense_rows, 2, 128), 1, dtype=dtype)
+    q[:, :dense_rows] = 2
+    k = torch.full((1, key_rows, 2, 128), 3, dtype=dtype)
+    v = torch.full_like(k, 4)
+    plan = rectangular.Plan(
+        key_indices=torch.arange(key_rows - 1, -1, -1),
+        sparse_indices=torch.arange(dense_rows, sparse_rows + dense_rows),
+        dense_indices=torch.arange(dense_rows),
+        protected_keys=torch.empty(0, dtype=torch.long),
+        image_groups=(),
+        image_query_blocks=torch.empty(0, dtype=torch.long),
+        sparse_rows=sparse_rows,
+        dense_rows=dense_rows,
+        key_rows=key_rows,
+    )
+    group_sizes = [size for size in (sparse_rows, dense_rows) if size]
+
+    for key_value in (3, 5):
+        k.fill_(key_value)
+        sdk._eagle_qbsa_quant_qkv.reset_mock()
+        sdk._perblock_quant.reset_mock()
+        attention.reset_mock()
+        result = rectangular.run(q, k, v, plan, 0.5, 0.125, precision="mix")
+
+        torch.testing.assert_close(result, q, rtol=0, atol=0)
+        sdk._eagle_qbsa_quant_qkv.assert_called_once()
+        assert sdk._eagle_qbsa_quant_qkv.call_args.kwargs == {"block_size_q": 64, "layout": "BSND"}
+        assert sdk._perblock_quant.call_count == len(group_sizes) - 1
+        calls = [call.kwargs for call in attention.call_args_list]
+        assert [call["actual_seq_lengths"] for call in calls] == [[size] for size in group_sizes]
+        assert all(call["actual_seq_lengths_kv"] == [key_rows] for call in calls)
+        assert (calls[0]["key"] == key_value).all()
+        if len(calls) == 2:
+            assert sdk._perblock_quant.call_args.kwargs == {"block_size": 64, "dst_type": torch.int8}
+            assert calls[1]["block_sparse_mask"].all()
+            assert calls[0]["query_scale"] is not calls[1]["query_scale"]
+            for name in ("key", "value", "key_scale", "value_scale"):
+                assert calls[0][name].data_ptr() == calls[1][name].data_ptr()
